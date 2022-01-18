@@ -1,0 +1,18 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.CustomGallery" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/day_background</item>
+        <item name="colorPrimaryVariant">@color/day_background</item>
+        <item name="colorOnPrimary">@color/day_foreground</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/app_background</item>
+        <item name="colorSecondaryVariant">@color/app_background</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorOnPrimary</item>
+        <!-- Customize your theme here. -->
+        <item name="android:overScrollMode">never</item>
+        <item name="android:windowDisablePreview">true</item>
+    </style>
+</resources>

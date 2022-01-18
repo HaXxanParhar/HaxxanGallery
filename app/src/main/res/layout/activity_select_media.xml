@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?colorPrimary"
+    tools:context=".SelectMediaActivity">
+
+    <RelativeLayout
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?actionBarSize"
+        android:background="@color/app_background"
+        android:elevation="@dimen/_2sdp"
+        tools:targetApi="lollipop">
+
+        <ImageView
+            android:id="@+id/iv_back"
+            android:layout_width="@dimen/_40sdp"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="@dimen/_10sdp"
+            android:src="@drawable/ic_baseline_close_24"
+            app:tint="@color/white" />
+
+        <TextView
+            android:layout_width="@dimen/_100sdp"
+            android:layout_height="match_parent"
+            android:layout_centerHorizontal="true"
+            android:fontFamily="@font/metropolis_semi_bold"
+            android:gravity="center"
+            android:text="Upload Media"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14ssp" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/app_background"
+            android:padding="@dimen/_12sdp">
+
+            <TextView
+                android:id="@+id/tv_whats"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_toStartOf="@id/iv_user_profile"
+                android:fontFamily="@font/metropolis_medium"
+                android:text="Whats on your mind"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_12ssp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tv_whats"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:layout_toStartOf="@id/iv_user_profile"
+                android:fontFamily="@font/metropolis_regular"
+                android:text="Lorem ipsum is simply a dummy text!"
+                android:textColor="@color/off_white"
+                android:textSize="@dimen/_9ssp" />
+
+
+            <com.makeramen.roundedimageview.RoundedImageView
+                android:id="@+id/iv_user_profile"
+                android:layout_width="@dimen/_54sdp"
+                android:layout_height="@dimen/_54sdp"
+                android:layout_alignParentEnd="true"
+                android:src="@color/black"
+                app:riv_border_color="@color/white"
+                app:riv_border_width="@dimen/_2sdp"
+                app:riv_corner_radius="@dimen/_18sdp" />
+
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/rl_camera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/_12sdp"
+            android:layout_marginTop="@dimen/_16sdp"
+            android:layout_marginBottom="@dimen/_4sdp"
+            android:background="@drawable/bg_select_media"
+            android:padding="@dimen/_16sdp">
+
+            <TextView
+                android:id="@+id/tv_camera"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:fontFamily="@font/metropolis_medium"
+                android:text="Camera"
+                android:textColor="?colorOnPrimary"
+                android:textSize="@dimen/_10ssp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tv_camera"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:fontFamily="@font/metropolis_regular"
+                android:text="Lorem ipsum is simply a dummy text!"
+                android:textColor="?colorOnPrimary"
+                android:textSize="@dimen/_7ssp" />
+
+
+            <ImageView
+                android:layout_width="@dimen/_24sdp"
+                android:layout_height="@dimen/_24sdp"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/ic_open_camera" />
+
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/rl_photo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/_12sdp"
+            android:layout_marginVertical="@dimen/_4sdp"
+            android:background="@drawable/bg_select_media"
+            android:padding="@dimen/_16sdp">
+
+            <TextView
+                android:id="@+id/tv_photo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:fontFamily="@font/metropolis_medium"
+                android:text="Photo from Gallery"
+                android:textColor="?colorOnPrimary"
+                android:textSize="@dimen/_10ssp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tv_photo"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:fontFamily="@font/metropolis_regular"
+                android:text="Lorem ipsum is simply a dummy text!"
+                android:textColor="?colorOnPrimary"
+                android:textSize="@dimen/_7ssp" />
+
+
+            <ImageView
+                android:layout_width="@dimen/_24sdp"
+                android:layout_height="@dimen/_24sdp"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/ic_single_photo" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/rl_photos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/_12sdp"
+            android:layout_marginVertical="@dimen/_4sdp"
+            android:background="@drawable/bg_select_media"
+            android:padding="@dimen/_16sdp">
+
+            <TextView
+                android:id="@+id/tv_photos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:fontFamily="@font/metropolis_medium"
+                android:text="Multiple Photos"
+                android:textColor="?colorOnPrimary"
+                android:textSize="@dimen/_10ssp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tv_photos"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:fontFamily="@font/metropolis_regular"
+                android:text="Lorem ipsum is simply a dummy text!"
+                android:textColor="?colorOnPrimary"
+                android:textSize="@dimen/_7ssp" />
+
+
+            <ImageView
+                android:layout_width="@dimen/_24sdp"
+                android:layout_height="@dimen/_24sdp"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/ic_multi_photos" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/rl_gif"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/_12sdp"
+            android:layout_marginVertical="@dimen/_4sdp"
+            android:background="@drawable/bg_select_media"
+            android:padding="@dimen/_16sdp">
+
+            <TextView
+                android:id="@+id/tv_gif"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:fontFamily="@font/metropolis_medium"
+                android:text="Gif"
+                android:textColor="?colorOnPrimary"
+                android:textSize="@dimen/_10ssp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tv_gif"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:fontFamily="@font/metropolis_regular"
+                android:text="Lorem ipsum is simply a dummy text!"
+                android:textColor="?colorOnPrimary"
+                android:textSize="@dimen/_7ssp" />
+
+
+            <ImageView
+                android:layout_width="@dimen/_24sdp"
+                android:layout_height="@dimen/_24sdp"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/ic_gif" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/rl_flashes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/_12sdp"
+            android:layout_marginVertical="@dimen/_4sdp"
+            android:background="@drawable/bg_select_media"
+            android:padding="@dimen/_16sdp">
+
+            <TextView
+                android:id="@+id/tv_flashes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:fontFamily="@font/metropolis_medium"
+                android:text="Flashes"
+                android:textColor="?colorOnPrimary"
+                android:textSize="@dimen/_10ssp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tv_flashes"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:fontFamily="@font/metropolis_regular"
+                android:text="Lorem ipsum is simply a dummy text!"
+                android:textColor="?colorOnPrimary"
+                android:textSize="@dimen/_7ssp" />
+
+
+            <ImageView
+                android:layout_width="@dimen/_24sdp"
+                android:layout_height="@dimen/_24sdp"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/ic_flashes" />
+
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>
