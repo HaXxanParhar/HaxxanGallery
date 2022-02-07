@@ -17,6 +17,17 @@ public class GalleryMediaModel implements Parcelable {
     private boolean selected = false;
     private boolean visible = false;
 
+    public GalleryMediaModel(String mediaPath, String mediaType) {
+        this.mediaPath = mediaPath;
+        this.mediaType = mediaType;
+    }
+
+    public GalleryMediaModel(String mediaPath, String mediaUri, String mediaType) {
+        this.mediaPath = mediaPath;
+        this.mediaUri = mediaUri;
+        this.mediaType = mediaType;
+    }
+
     public GalleryMediaModel() {
 
     }

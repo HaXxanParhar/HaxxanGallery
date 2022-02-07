@@ -32,13 +32,20 @@ public class PicturesAdapter extends RecyclerView.Adapter<PicturesAdapter.PicHol
     private final Context context;
     private final PictureClickCallback pictureClickCallback;
     private final LongClickCallback longClickCallback;
-    private ArrayList<GalleryMediaModel> pictureList;
+    private ArrayList<GalleryMediaModel> list;
 
-    public PicturesAdapter(ArrayList<GalleryMediaModel> pictureList, Context context, PictureClickCallback pictureClickCallback, LongClickCallback longClickCallback) {
-        this.pictureList = pictureList;
+    public PicturesAdapter(ArrayList<GalleryMediaModel> list, Context context, PictureClickCallback pictureClickCallback, LongClickCallback longClickCallback) {
+        this.list = list;
         this.context = context;
         this.pictureClickCallback = pictureClickCallback;
         this.longClickCallback = longClickCallback;
+    }
+
+    public PicturesAdapter(ArrayList<GalleryMediaModel> list, Context context, PictureClickCallback pictureClickCallback) {
+        this.list = list;
+        this.context = context;
+        this.pictureClickCallback = pictureClickCallback;
+        this.longClickCallback = null;
     }
 
     @NonNull
@@ -52,7 +59,7 @@ public class PicturesAdapter extends RecyclerView.Adapter<PicturesAdapter.PicHol
     @Override
     public void onBindViewHolder(@NonNull final PicHolder holder, final int position) {
 
-        final GalleryMediaModel image = pictureList.get(position);
+        final GalleryMediaModel image = list.get(position);
 
         holder.loading.setVisibility(View.VISIBLE);
         Glide.with(context)
@@ -75,17 +82,23 @@ public class PicturesAdapter extends RecyclerView.Adapter<PicturesAdapter.PicHol
         // to enable transition from recyclerview image to Image in Picture Browser Fragment
         setTransitionName(holder.picture, position + "_image");
 
-        holder.rlMain.setOnClickListener(v -> pictureClickCallback.onPictureClicked(holder, position, pictureList));
+        holder.rlMain.setOnClickListener(v -> pictureClickCallback.onPictureClicked(holder, position));
 
         holder.rlMain.setOnLongClickListener(view -> {
-            longClickCallback.onLongClicked(holder, position, pictureList);
+            if (longClickCallback != null)
+                longClickCallback.onLongClicked(holder, position, list);
             return true;
         });
     }
 
     @Override
     public int getItemCount() {
-        return pictureList == null ? 0 : pictureList.size();
+        return list == null ? 0 : list.size();
+    }
+
+    public void setList(ArrayList<GalleryMediaModel> allImages) {
+        this.list = allImages;
+        notifyDataSetChanged();
     }
 
     public interface LongClickCallback {
@@ -93,7 +106,7 @@ public class PicturesAdapter extends RecyclerView.Adapter<PicturesAdapter.PicHol
     }
 
     public interface PictureClickCallback {
-        void onPictureClicked(PicturesAdapter.PicHolder holder, int position, ArrayList<GalleryMediaModel> pics);
+        void onPictureClicked(PicturesAdapter.PicHolder holder, int position);
     }
 
     public static class PicHolder extends RecyclerView.ViewHolder {

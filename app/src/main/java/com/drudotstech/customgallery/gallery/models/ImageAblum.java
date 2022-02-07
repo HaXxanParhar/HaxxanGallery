@@ -44,6 +44,11 @@ public class ImageAblum {
         this.numberOfPics++;
     }
 
+
+    public void setNumberOfPics(int numberOfPics) {
+        this.numberOfPics = numberOfPics;
+    }
+
     public String getFirstPic() {
         return firstPic;
     }

@@ -12,10 +12,9 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.drudotstech.customgallery.gallery.AlbumsActivity;
+import com.drudotstech.customgallery.gallery.GalleryBuilder;
 import com.drudotstech.customgallery.gallery.models.GalleryMediaModel;
 import com.drudotstech.customgallery.gallery.models.GalleryResult;
-import com.drudotstech.customgallery.gallery.utils.GalleryConfig;
 import com.drudotstech.customgallery.gallery.utils.GalleryConstants;
 
 import java.util.List;
@@ -25,7 +24,6 @@ import java.util.List;
  ******************************************************/
 
 public class SelectMediaActivity extends AppCompatActivity {
-
 
     // ------------------------------------- C O N S T A N T S  ------------------------------------
     private final Context context = SelectMediaActivity.this;
@@ -76,18 +74,28 @@ public class SelectMediaActivity extends AppCompatActivity {
     }
 
     private void openMultiSelectionGallery() {
-        GalleryConfig galleryConfig = new GalleryConfig(GalleryConfig.MULTIPLE_SELECTION);
-        final Intent intent = new Intent(context, AlbumsActivity.class);
-        intent.putExtra(GalleryConstants.CONFIG_KEY, galleryConfig);
-        galleryLauncher.launch(intent);
-        overridePendingTransition(R.anim.right_to_left, R.anim.left_to_right);
+//        GalleryConfig galleryConfig = new GalleryConfig(GalleryConfig.MULTIPLE_SELECTION);
+//        final Intent intent = new Intent(context, AlbumsActivity.class);
+//        intent.putExtra(GalleryConstants.CONFIG_KEY, galleryConfig);
+//        galleryLauncher.launch(intent);
+//        overridePendingTransition(R.anim.right_to_left, R.anim.left_to_right);
+
+        new GalleryBuilder(this, galleryLauncher)
+                .setMultiSelection(5)
+                .showALLPicturesGallery()
+                .start();
     }
 
     private void openGallery() {
-        GalleryConfig galleryConfig = new GalleryConfig(GalleryConfig.SINGLE_SELECTION);
-        final Intent intent = new Intent(context, AlbumsActivity.class);
-        intent.putExtra(GalleryConstants.CONFIG_KEY, galleryConfig);
-        galleryLauncher.launch(intent);
-        overridePendingTransition(R.anim.right_to_left, R.anim.left_to_right);
+        new GalleryBuilder(this, galleryLauncher)
+                .setSingleSelection()
+                .showALLPicturesGallery()
+                .start();
+
+//        GalleryConfig galleryConfig = new GalleryConfig(GalleryConfig.SINGLE_SELECTION);
+//        final Intent intent = new Intent(context, AlbumsActivity.class);
+//        intent.putExtra(GalleryConstants.CONFIG_KEY, galleryConfig);
+//        galleryLauncher.launch(intent);
+//        overridePendingTransition(R.anim.right_to_left, R.anim.left_to_right);
     }
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><!-- *********** Developed by Drudots Technology ************ -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rl_item"
+    android:layout_width="wrap_content"
+    android:layout_height="?actionBarSize"
+    android:paddingHorizontal="@dimen/_5sdp">
+
+    <TextView
+        android:id="@+id/tv_aspect_ratio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:background="@drawable/bg_aspect_selected"
+        android:fontFamily="@font/metropolis_medium"
+        android:paddingHorizontal="@dimen/_6sdp"
+        android:paddingVertical="@dimen/_3sdp"
+        android:text="Square"
+        android:textColor="@color/white"
+        android:textSize="@dimen/_10ssp" />
+
+
+</RelativeLayout>

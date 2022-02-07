@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><!-- *********** Developed by Drudots Technology ************ -->
+<shape android:shape="oval" xmlns:android="http://schemas.android.com/apk/res/android">
+<solid android:color="#7E7E7E"/>
+</shape>

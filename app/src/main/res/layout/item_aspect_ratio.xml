@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+        <variable
+            name="viewState"
+            type="com.drudotstech.customgallery.croppy.aspectratiorecyclerviewlib.aspectratio.AspectRatioItemViewState" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/aspect_lib_margin_8dp"
+        android:layout_marginRight="@dimen/aspect_lib_margin_8dp"
+        android:gravity="bottom"
+        android:paddingTop="@dimen/aspect_lib_padding_4dp"
+        android:paddingBottom="@dimen/aspect_lib_padding_4dp">
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <RelativeLayout
+                android:id="@+id/layoutBackground"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/textViewAspectRatio"
+                android:layout_centerHorizontal="true"
+                android:layout_marginBottom="@dimen/margin_bottom_aspect_ratio_icon"
+                android:background="@{viewState.getItemBackground(context)}"
+                app:aspectSize="@{viewState}">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="@dimen/size_aspect_social_media_icon"
+                    android:layout_height="@dimen/size_aspect_social_media_icon"
+                    android:layout_centerInParent="true"
+                    android:src="@{viewState.getSocialMediaImageDrawable(context)}"
+                    app:colorFilter="@{viewState.getSocialMediaImageColorTint()}" />
+
+            </RelativeLayout>
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/textViewAspectRatio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:text="@{viewState.getItemText(context)}"
+                android:textColor="@{viewState.getItemTextColor()}"
+                android:textSize="@dimen/aspect_lib_text_size_small"
+                android:textStyle="bold" />
+
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</layout>
