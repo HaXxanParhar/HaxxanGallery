@@ -9,8 +9,14 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
+
+import androidx.annotation.Nullable;
+import androidx.core.content.res.ResourcesCompat;
+
+import com.drudotstech.customgallery.R;
 
 /********** Developed by Drudots Technology **********
  * Created by : usman on 2/2/2022 at 1:34 PM
@@ -18,11 +24,16 @@ import android.view.View;
 
 
 @SuppressLint("ViewConstructor")
-public class MyBitmap extends View {
+public class StickerView extends View {
 
+    public static final int BITMAP = 1;
+    public static final int TEXT = 2;
     private static final float MIN_SCALE = 0.5f; // lesser value = more sensitive
     private static final float MAX_SCALE = 5; // lesser value = more sensitive
     private static final String TAG = "yam";
+    public int stickerType; // bitmap or text
+    public String text = "5:34 PM";
+
     public int left, top, right, bottom, height, width;
     public RectF rect;
     public Context context;
@@ -34,10 +45,15 @@ public class MyBitmap extends View {
     public boolean isTranslated;// if translation is required
     public boolean isRotated;// if rotation is required
 
+    public RectF canvasRect;
+
+    public Paint textPaint;
+    public Paint secondaryTextPaint;
     public Paint borderPaint;
     public Paint redPaint;
     public int margin = 2;
 
+    public Rect textRect;
     public RectF borderRect;
     public RectF startingRectF; // to save the init rectf before making changes to bitmap
 
@@ -47,10 +63,23 @@ public class MyBitmap extends View {
     private float[] matrixValues = new float[9];
 
 
-    public MyBitmap(Context context, Bitmap bitmap) {
+    public StickerView(Context context, @Nullable AttributeSet attrs, Context context1) {
+        super(context, attrs);
+        this.context = context1;
+    }
+
+    public StickerView(Context context, String text) {
+        super(context);
+        this.context = context;
+        this.text = text;
+        this.stickerType = TEXT;
+    }
+
+    public StickerView(Context context, Bitmap bitmap) {
         super(context);
         this.context = context;
         this.bitmap = bitmap;
+        this.stickerType = BITMAP;
 
         init(context);
 
@@ -64,7 +93,48 @@ public class MyBitmap extends View {
         bottom = top + height;
 
         rect = new RectF(left, top, right, bottom);
+        textRect = new Rect(0, 0, 500, 500);
         updateBorderRect(context);
+    }
+
+    public StickerView(StickerView s) {
+        super(s.context);
+        this.context = s.context;
+        this.bitmap = s.bitmap;
+        this.stickerType = s.stickerType;
+
+        width = s.width;
+        height = s.height;
+
+        // to make it in center
+        left = s.left;
+        top = s.top;
+        right = s.right;
+        bottom = s.bottom;
+
+        rect = s.rect;
+
+        screenWidth = s.screenWidth;
+        screenHeight = s.screenHeight;
+        centerX = s.centerX;
+        centerY = s.centerY;
+        isScaled = s.isScaled;// if scaling is required
+        isTranslated = s.isTranslated;// if translation is required
+        isRotated = s.isRotated;// if rotation is required
+
+        canvasRect = s.canvasRect;
+
+        borderPaint = s.borderPaint;
+        redPaint = s.redPaint;
+        margin = s.margin;
+
+        borderRect = s.borderRect;
+        startingRectF = s.startingRectF; // to save the init rectf before making changes to bitmap
+
+        isClicked = s.isClicked;
+        scale = s.scale;
+        matrix = s.matrix;
+        matrixValues = s.matrixValues;
     }
 
 
@@ -86,14 +156,27 @@ public class MyBitmap extends View {
         centerY = (float) (screenHeight / 2.0);
 
         borderPaint = new Paint();
+        borderPaint.setAntiAlias(true);
         borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setColor(Color.RED);
+        borderPaint.setColor(Color.BLACK);
         borderPaint.setStrokeWidth(CanvasUtils.toPx(context, 2f));
 
         redPaint = new Paint();
         redPaint.setStyle(Paint.Style.STROKE);
         redPaint.setColor(Color.RED);
+        redPaint.setAntiAlias(true);
         redPaint.setStrokeWidth(CanvasUtils.toPx(context, 3f));
+
+        textPaint = new Paint();
+        textPaint.setColor(Color.WHITE);
+        textPaint.setAntiAlias(true);
+        textPaint.setTypeface(ResourcesCompat.getFont(context, R.font.time_font));
+        textPaint.setTextSize(200);
+
+        secondaryTextPaint = new Paint();
+        secondaryTextPaint.setColor(Color.WHITE);
+        secondaryTextPaint.setTypeface(ResourcesCompat.getFont(context, R.font.metropolis_bold));
+        secondaryTextPaint.setTextSize(50);
 
         setRotation(0);
 
@@ -109,9 +192,13 @@ public class MyBitmap extends View {
         isClicked = clicked;
     }
 
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+
+//        canvas.save();
+//        canvas.clipRect(canvasRect); // to clip the main bitmap area
 
         Log.d(TAG, "------------------------------- on Draw --------------------------------------");
         Log.d(TAG, "Left : " + rect.left + "  |  Top : " + rect.top + "  |  Right : " + rect.right + "  |  Bottom : " + rect.bottom);
@@ -121,7 +208,17 @@ public class MyBitmap extends View {
 
         matrix.postScale(scale, scale, rect.centerX(), rect.centerY());
 
-        canvas.drawBitmap(bitmap, matrix, null);
+//        if (textPaint != null && !TextUtils.isEmpty(text))
+        textPaint.setTextSize(200 * scale);
+        textPaint.getTextBounds(text, 0, text.length(), textRect);
+//        secondaryTextPaint.setTextSize(50 * scale);
+        canvas.drawText(text, textRect.centerX(), textRect.centerY(), textPaint);
+//        canvas.drawText("PM", rect.left + rect.width(), rect.top, secondaryTextPaint);
+//        canvas.drawBitmap(bitmap, matrix, null);
+
+
+//        canvas.restore();
+
 
 //        else {
 //            canvas.drawBitmap(bitmap, null, rect, null);
@@ -130,6 +227,7 @@ public class MyBitmap extends View {
         if (startingRectF != null) {
             matrix.getValues(matrixValues);
 
+            //------------------- Scaling --------------------------------
             float scaledX = matrixValues[Matrix.MSCALE_X];
             float scaledY = matrixValues[Matrix.MSCALE_Y];
             scaledX = getBoundedScale(scaledX);
@@ -150,6 +248,7 @@ public class MyBitmap extends View {
             Log.d(TAG, "Left : " + borderRect.left + "  |  Top : " + borderRect.top
                     + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
 
+            //------------------- Translating --------------------------------
 //            if (isTranslated) {
             float translatedX = matrixValues[Matrix.MTRANS_X];
             float translatedY = matrixValues[Matrix.MTRANS_Y];
@@ -182,13 +281,14 @@ public class MyBitmap extends View {
         }
 
         if (isClicked) {
+            canvas.drawRect(borderRect.left, borderRect.top, borderRect.right, borderRect.bottom, redPaint);
+            Log.d(TAG, "---------- TEST_BORDER ---------");
+            Log.d(TAG, "TEST_BORDER draw : Left : " + borderRect.left + "  |  Top : " + borderRect.top + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
+        } else {
+            if (textRect != null)
+                canvas.drawRect(textRect, borderPaint);
             canvas.drawRect(borderRect.left, borderRect.top, borderRect.right, borderRect.bottom, borderPaint);
-            Log.d(TAG, "---------- Border Rect ---------");
-            Log.d(TAG, "Left : " + rect.left + "  |  Top : " + rect.top + "  |  Right : " + rect.right + "  |  Bottom : " + rect.bottom);
         }
-
-//        updateBorderRect(context);
-
     }
 
     private Rect toRect(RectF rectF) {

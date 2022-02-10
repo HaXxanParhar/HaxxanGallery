@@ -9,12 +9,18 @@ import android.graphics.Bitmap;
 
 public class BitmapResult {
 
-    private Bitmap bitmap;
     private boolean status;
+    private Bitmap bitmap;
+    private Exception exception;
 
-    public BitmapResult(Bitmap bitmap, boolean status) {
-        this.bitmap = bitmap;
+    public BitmapResult(boolean status,Bitmap bitmap) {
         this.status = status;
+        this.bitmap = bitmap;
+    }
+
+    public BitmapResult(boolean status, Exception exception) {
+        this.status = status;
+        this.exception = exception;
     }
 
     public Bitmap getBitmap() {
@@ -31,5 +37,13 @@ public class BitmapResult {
 
     public void setStatus(boolean status) {
         this.status = status;
+    }
+
+    public Exception getException() {
+        return exception;
+    }
+
+    public void setException(Exception exception) {
+        this.exception = exception;
     }
 }

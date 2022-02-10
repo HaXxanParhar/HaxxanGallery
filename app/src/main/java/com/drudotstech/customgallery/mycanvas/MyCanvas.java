@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
@@ -12,6 +13,11 @@ import android.graphics.RectF;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Toast;
+
+import com.drudotstech.customgallery.R;
+import com.drudotstech.customgallery.editor.photoeditor.ImageFilterView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,104 +29,124 @@ import java.util.List;
 
 public class MyCanvas extends View {
 
+    // region --> V A R I A B L E S <--
     private static final String TAG = "Haxx";
     private static final int INVALID_VALUE = -1;
     private static final int SCALING_SENSITIVITY = 60; // lesser value = more sensitive
-    private static final float MAX_SCALE_CHANGE = 0.3f; // the max change that should be made to scale at a time
     private static final float MIN_SCALE = 0.5f; // lesser value = more sensitive
     private static final float MAX_SCALE = 5; // lesser value = more sensitive
     private final int CLICK_DELAY = 300;// the delay (ms) between action down and up that will count as click
-
     private final Context context;
-    private Bitmap sticker;
-    private int screenWidth;
-    private int screenHeight;
-    private float centerX, centerY;
+    private ImageFilterView imageFilterView;
+    private boolean isSelectionEnabled = false;
 
-    private Rect screenRect;
-    private Bitmap backgroundBitmap;
-    private Paint paint;
+    private Bitmap deleteBitmap; // delete bitmap
+    private float deleteIconSize = 60f; // delete icon size
+    private float animationStartDist = deleteIconSize * 3; // distance from where the scaling of delete will start
+    private float animationEndDist = deleteIconSize * 2; // distance from where the scaling of delete will start
+    private float showDeleteAreaDistance = deleteIconSize * 4; // distance from where the deletion area will show
+    private float animationMinScale = 1f; // how much the animation should scale the icon
+    private float animationMaxScale = 2f; // how much the animation should scale the icon
+    private RectF deleteRect; // delete area
+    private RectF deleteIconRect; // delete icon rect
+    private RectF tempRect; // temp delete icon rect
+    private Paint deletePaint; // paint for the delete area
+    private PointF deleteCenterPoint;
+    private boolean showDeleteArea = false;
+    // to scale the delete icon as sticker comes closer i.e. more closer sticker, more distance ratio
+    private float distanceRatio = 1;
 
-    private List<MyBitmap> views = new ArrayList<>();
+    private Rect screenRect; // rect of the canvas
+    private Paint bitmapPaint; // anti alise paint for bitmaps
 
-    // for moving
-    private int actionDownViewIndex;
-    private int previousViewIndex = INVALID_VALUE;
-    private long actionDownTime;
-    private int clickedIndex = -1;
-    private int dx, dy;
-    private float dLeft, dTop, dRight, dBottom;
+    private RectF mainRect; // the rect of the main bitmap
+    private Bitmap backgroundBitmap; // background i.e. blurred image
+    private List<LayerModel> layers = new ArrayList<>(); // layers
+    private LayerModel selectedLayer; // object of selected layer
+    private int selectedLayerIndex = INVALID_VALUE; // the index of the selected layer from the layers list
+    private float dLeft, dTop, dRight, dBottom; // rect differences from the touch x,y. useful for drawing bitmap accurately after touch
 
     // for rotation & scaling
-    private PointF secondPoint = new PointF();
-    private PointF firstPoint = new PointF();
-    private int pointerId1 = INVALID_VALUE, pointerId2 = INVALID_VALUE;
-    private float angle;
-    private MyBitmap selectedView;
-    private float startingScale = INVALID_VALUE;
-    private float startingRotation = INVALID_VALUE;
+    private PointF secondPoint = new PointF(); // temp point
+    private PointF firstPoint = new PointF(); // temp point
+    private int pointerId1 = INVALID_VALUE; // secondary touch pointer identifier
+    private int pointerId2 = INVALID_VALUE; // secondary touch pointer identifier
+    private float angle; // angle of rotation
+    private float startingScale = INVALID_VALUE; // to store starting scale before applying new scale
+    private float startingRotation = INVALID_VALUE; // to store starting angle before applying new rotation
+    // endregion
 
     public MyCanvas(Context context) {
         super(context);
         this.context = context;
-        screenWidth = CanvasUtils.getScreenWidth(context);
-        screenHeight = CanvasUtils.getScreenHeight(context);
-        centerX = (float) (screenWidth / 2.0);
-        centerY = (float) (screenHeight / 2.0);
+        int screenWidth = CanvasUtils.getScreenWidth(context);
+        int screenHeight = CanvasUtils.getScreenHeight(context);
 
-        paint = new Paint();
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(Color.BLUE);
-        paint.setStrokeWidth(CanvasUtils.toPx(context, 4f));
+        deletePaint = new Paint();
+        deletePaint.setStyle(Paint.Style.STROKE);
+        deletePaint.setColor(Color.BLUE);
+        deletePaint.setStrokeWidth(CanvasUtils.toPx(context, 2f));
 
-        screenRect = new Rect(0, 0, screenWidth, screenHeight);
-
+        bitmapPaint = new Paint();
+        bitmapPaint.setAntiAlias(true);
     }
 
-    public void setSticker(Bitmap sticker) {
-        this.sticker = sticker;
-        invalidate();
+    public void init() {
+        final ViewGroup.LayoutParams layoutParams = getLayoutParams();
+        screenRect = new Rect(0, 0, layoutParams.width, layoutParams.height);
+
+        // create a rect for delete area
+        float heightOffset = layoutParams.height * 0.10f; // to get the 10% of the height
+        float widthOffset = layoutParams.width * 0.25f; // to get the 25% of the width
+        float left = (layoutParams.width / 2.0f) - (widthOffset / 2.0f);
+        float right = (layoutParams.width / 2.0f) + (widthOffset / 2.0f);
+        float top = layoutParams.height - heightOffset;
+        float bottom = layoutParams.height;
+        final int bottomMargin = 40;
+        deleteRect = new RectF(left, top - bottomMargin, right, bottom - bottomMargin);
+
+        float halfSize = deleteIconSize / 2;
+        deleteBitmap = CanvasUtils.getBitmapFromPNG(context, R.drawable.trash, deleteIconSize, deleteIconSize);
+
+        // create centered rect
+        deleteIconRect = new RectF(
+                deleteRect.centerX() - halfSize,
+                deleteRect.centerY() - halfSize,
+                deleteRect.centerX() + halfSize,
+                deleteRect.centerY() + halfSize);
+
+        deleteCenterPoint = new PointF(deleteIconRect.centerX(), deleteIconRect.centerY());
     }
+
+
+    //region --> G E T T E R S   &   S E T T E R S <--
 
     public void addBackgroundBitmap(Bitmap bitmap) {
         backgroundBitmap = bitmap;
         invalidate();
     }
 
-    public void addBitmapView(MyBitmap myBitmap) {
-        views.add(myBitmap);
-        invalidate();
-    }
+    public void addLayer(LayerModel layer) {
+        switch (layer.type) {
+            case LayerModel.FILTER:
+                mainRect = layer.mainRect;
+                // if filter layer is already added in the layers
+                if (layers.size() >= 1 && layers.get(0) != null && layers.get(0).type == LayerModel.FILTER) {
+                    // set the layer on the existing layer
+                    layers.set(0, layer);
+                } else {
+                    // add new layer
+                    layers.add(0, layer);
+                }
+                break;
 
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-//        if (bitmaps != null && !bitmaps.isEmpty()) {
-//            for (BitmapModel B : bitmaps) {
-//                canvas.drawBitmap(B.getBitmap(), B.getLeft(), B.getTop(), null);
-//            }
-//        }
-
-        canvas.drawBitmap(backgroundBitmap, null, screenRect, null);
-
-        if (views != null && !views.isEmpty()) {
-            for (MyBitmap view : views) {
-//                B.draw(canvas);
-
-                //Lay the view out with the known dimensions
-                view.layout(view.left, view.top, view.right, view.bottom);
-
-                //Translate the canvas so the view is drawn at the proper coordinates
-                canvas.save();
-                canvas.translate(0, 0);
-
-                //Draw the View and clear the translation
-                view.draw(canvas);
-                canvas.restore();
-            }
+            case LayerModel.PAINT:
+            case LayerModel.STICKER:
+                layer.sticker.canvasRect = mainRect;
+                layers.add(layer);
+                break;
         }
-//        canvas.drawCircle(centerX, centerY, CanvasUtils.toPx(context, 50f), paint);
+        invalidate();
     }
 
     public Bitmap getFinalBitmap() {
@@ -133,276 +159,416 @@ public class MyCanvas extends View {
         return bmp;
     }
 
+    public CanvasState getCurrentCanvasState() {
+        return new CanvasState(backgroundBitmap, layers);
+    }
 
-    @SuppressLint("ClickableViewAccessibility")
+    public void updateFromCanvasState(CanvasState canvasState) {
+        layers = new ArrayList<>();
+        for (LayerModel layer : canvasState.getLayers()) {
+            if (layer.type == LayerModel.STICKER) {
+                LayerModel newLayer = new LayerModel(new StickerView(layer.sticker));
+                this.layers.add(newLayer);
+            } else {
+                this.layers.add(layer.copy());
+            }
+        }
+        backgroundBitmap = canvasState.getBackgroundBitmap();
+        invalidate();
+    }
+
+    public void resetStickerSelection() {
+        selectedLayerIndex = INVALID_VALUE;
+        selectedLayer = null;
+    }
+
+    public boolean isSelectionEnabled() {
+        return isSelectionEnabled;
+    }
+
+    public void setSelectionEnabled(boolean selectionEnabled) {
+        isSelectionEnabled = selectionEnabled;
+    }
+
+    // endregion
+
     @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
+        // draw blur background
+        if (backgroundBitmap != null)
+            canvas.drawBitmap(backgroundBitmap, null, screenRect, bitmapPaint);
+
+        // draw rest of the layers
+        if (layers != null && !layers.isEmpty()) {
+            LayerModel firstLayer = layers.get(0);
+            for (LayerModel layer : layers) {
+
+                switch (layer.type) {
+
+                    case LayerModel.FILTER:
+                        canvas.drawBitmap(layer.mainBitmap, null, layer.mainRect, bitmapPaint);
+
+                        if (deleteBitmap != null && showDeleteArea) {
+                            canvas.drawBitmap(deleteBitmap, null, deleteIconRect, null);
+                            canvas.drawRect(deleteRect, deletePaint);
+                        }
+                        break;
+
+                    case LayerModel.STICKER:
+                        //Lay the view out with the known dimensions
+                        layer.sticker.layout(layer.sticker.left, layer.sticker.top,
+                                layer.sticker.right, layer.sticker.bottom);
+
+
+                        //Translate the canvas so the view is drawn at the proper coordinates
+                        canvas.save();
+                        canvas.translate(0, 0);
+
+                        //Draw the View and clear the translation
+                        layer.sticker.draw(canvas);
+                        canvas.restore();
+                        break;
+
+                    case LayerModel.PAINT:
+                        canvas.drawBitmap(firstLayer.mainBitmap, null, firstLayer.mainRect, layer.paint);
+                        break;
+                }
+            }
+        }
+//        canvas.drawCircle(centerX, centerY, CanvasUtils.toPx(context, 50f), paint);
+    }
+
+    @Override
+    @SuppressLint("ClickableViewAccessibility")
     public boolean onTouchEvent(MotionEvent event) {
-        boolean shouldInvalidate = false;
 
-        final float rawX = event.getRawX();
-        final float rawY = event.getRawY();
-        final float X = event.getX();
-        final float Y = event.getY();
-        Log.d("Haxx", "--- " + rawX + " , " + rawY + "-------------- ");
+        if (isSelectionEnabled) {
+            try {
 
-        switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-
-                // first touch pointer
-                pointerId1 = event.getPointerId(event.getActionIndex());
-
-                // note the action down time and the view index
-                actionDownViewIndex = findSelectedViewIndex(rawX, rawY);
-
-                // nothing is selected already
-                if (selectedView == null) {
-
-                    // touch a view/sticker
-                    if (actionDownViewIndex != INVALID_VALUE) {
-
-                        // move the selected view on top of the layers
-                        moveViewToTop(actionDownViewIndex);
-                        previousViewIndex = actionDownViewIndex;
-
-                        // get selected view from the top
-                        selectedView = views.get(views.size() - 1);
-
-                        // make the touched view -> selected
-                        selectedView.setClicked(true);
-
-                        // save the starting rect
-                        selectedView.updateStartingRect();
+                final float rawX = event.getX();
+                final float rawY = event.getY();
+                final float X = event.getRawX();
+                final float Y = event.getRawY();
 
 
-                        // calculate the difference from touch place to selected Rect
-                        dLeft = (rawX - selectedView.rect.left);
-                        dRight = (rawX - selectedView.rect.right);
-                        dTop = (rawY - selectedView.rect.top);
-                        dBottom = (rawY - selectedView.rect.bottom);
-                        invalidate();
-                    }
-                }
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        Log.d("Haxx", "--- TEST_BORDER : " + rawX + " , " + rawY + "   |   " + X + " , " + Y + " ===> " + (rawX - X) + "  ,   " + (rawY - Y) + " ----- ");
 
-                // Some View is selected already
-                else {
-                    // first make the previous selected View -> unselected
-                    if (previousViewIndex != actionDownViewIndex)
-                        views.get(previousViewIndex).setClicked(false);
+                        // first touch pointer
+                        pointerId1 = event.getPointerId(event.getActionIndex());
 
-                    // if clicked on a view/sticker
-                    if (actionDownViewIndex != INVALID_VALUE) { // not clicked on empty screen
+                        // get sticker index on which user touched for selection/unselection
+                        int touchedViewIndex = findSelectedViewIndex(rawX, rawY);
+
+                        Log.d("TEST_MULTIPLE_STICKERS", "--------------------------------- Down ---------------------------------------");
+                        Log.d("TEST_MULTIPLE_STICKERS", "down Index : " + touchedViewIndex + " | Previous : " + selectedLayerIndex);
+
+                        // nothing is selected already
+                        if (selectedLayer == null) {
+                            Log.d("TEST_MULTIPLE_STICKERS", " Selected == null");
+
+                            // touch a view/sticker
+                            if (touchedViewIndex != INVALID_VALUE) {
+
+                                // move the touched view on top of the layers & update the previous Index
+                                selectedLayerIndex = moveViewToTop(touchedViewIndex);
+
+                                // get selected view from the top
+                                selectedLayer = layers.get(layers.size() - 1);
+
+                                // make the touched view -> selected
+                                selectedLayer.sticker.setClicked(true);
+
+                                // save the starting rect
+                                selectedLayer.sticker.updateStartingRect();
+
+                                Log.d("TEST_MULTIPLE_STICKERS", "Updated Previous : " + selectedLayerIndex);
 
 
-                        // move the selected view on top of the list
-                        moveViewToTop(actionDownViewIndex);
+                                // calculate the difference from touch place to selected Rect
+                                dLeft = (rawX - selectedLayer.sticker.rect.left);
+                                dRight = (rawX - selectedLayer.sticker.rect.right);
+                                dTop = (rawY - selectedLayer.sticker.rect.top);
+                                dBottom = (rawY - selectedLayer.sticker.rect.bottom);
+                                invalidate();
+                            }
+                        }
 
-                        // get selected view from the top
-                        selectedView = views.get(views.size() - 1);
+                        // Some View is selected already
+                        else {
+                            Log.d("TEST_MULTIPLE_STICKERS", " Selected != null");
 
-                        // make the touched view -> selected
-                        selectedView.setClicked(true);
+                            // if clicked on a view/sticker & not on empty screen
+                            if (touchedViewIndex != INVALID_VALUE) {
 
-                        // save the starting rect
-                        selectedView.updateStartingRect();
+                                // first make the previous selected View -> unselected
+                                if (selectedLayerIndex != touchedViewIndex && selectedLayerIndex != -1)
+                                    layers.get(selectedLayerIndex).sticker.setClicked(false);
 
-                        // calculate the difference from touch place to selected Rect
-                        dLeft = (rawX - selectedView.rect.left);
-                        dRight = (rawX - selectedView.rect.right);
-                        dTop = (rawY - selectedView.rect.top);
-                        dBottom = (rawY - selectedView.rect.bottom);
-                    }
-                    invalidate();
-                }
+                                // move the touched view on top of the layers & update the previous Index
+                                selectedLayerIndex = moveViewToTop(touchedViewIndex);
 
-                // note the action down time for detecting simple Click
-                actionDownTime = System.currentTimeMillis();
-                Log.d(TAG, "----------0 v 0--------------- " + actionDownViewIndex);
-                break;
+                                // get selected view from the top
+                                selectedLayer = layers.get(layers.size() - 1);
 
-            case MotionEvent.ACTION_POINTER_DOWN:
-                Log.v(TAG, "ACTION_POINTER_DOWN");
+                                // make the touched view -> selected
+                                selectedLayer.sticker.setClicked(true);
 
-                pointerId2 = event.getPointerId(event.getActionIndex());
-                if (selectedView != null) {
-                    getRawPoint(event, pointerId1, firstPoint);
-                    getRawPoint(event, pointerId2, secondPoint);
+                                // save the starting rect
+                                selectedLayer.sticker.updateStartingRect();
 
-                    // save the starting rect
-                    selectedView.updateStartingRect();
-                }
+                                // calculate the difference from touch place to selected Rect
+                                dLeft = (rawX - selectedLayer.sticker.rect.left);
+                                dRight = (rawX - selectedLayer.sticker.rect.right);
+                                dTop = (rawY - selectedLayer.sticker.rect.top);
+                                dBottom = (rawY - selectedLayer.sticker.rect.bottom);
+                            }
 
-                break;
+                            // clicked on the empty screen, unselect the selected one
+                            else {
+                                if (selectedLayerIndex != INVALID_VALUE) {
+                                    layers.get(selectedLayerIndex).sticker.setClicked(false);
+                                    selectedLayerIndex = INVALID_VALUE;
+                                }
+                            }
+                            invalidate();
+                        }
+                        break;
 
-            case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_POINTER_DOWN:
+                        Log.v(TAG, "ACTION_POINTER_DOWN");
 
-                // reset the first touch pointer
-                pointerId1 = INVALID_VALUE;
-                startingRotation = INVALID_VALUE;
-                startingScale = INVALID_VALUE;
+                        pointerId2 = event.getPointerId(event.getActionIndex());
+                        if (selectedLayer != null) {
+                            getRawPoint(event, pointerId1, firstPoint);
+                            getRawPoint(event, pointerId2, secondPoint);
 
-                if (selectedView != null) {
-                    selectedView.isScaled = false;
-                    selectedView.isTranslated = false;
-                }
+                            // save the starting rect
+                            selectedLayer.sticker.updateStartingRect();
+                        }
 
-                // update the Rect from starting rect
-//                selectedView.updateStartingRect();
+                        break;
 
-                int index = findSelectedViewIndex(rawX, rawY);
-                Log.d("Haxx", "----------o ^ o--------------- " + index);
-                if (index == -1) break;
+                    case MotionEvent.ACTION_UP:
 
-                break;
+                        // reset the first touch pointer
+                        pointerId1 = INVALID_VALUE;
+                        startingRotation = INVALID_VALUE;
+                        startingScale = INVALID_VALUE;
 
-            case MotionEvent.ACTION_POINTER_UP:
-                // reset the 2nd touch pointer
-                pointerId2 = INVALID_VALUE;
-                startingRotation = INVALID_VALUE;
-                startingScale = INVALID_VALUE;
-                break;
+                        if (selectedLayer != null) {
 
-            case MotionEvent.ACTION_MOVE:
-                Log.d("Haxx", "---------- - - - ---------------- " + clickedIndex);
+                            // check if the sticker is within the delete area
+                            PointF stickerCenterPoint = new PointF(
+                                    selectedLayer.sticker.borderRect.centerX(),
+                                    selectedLayer.sticker.borderRect.centerY());
 
-                // only perform actions if view is clicked/selected
-                if (selectedView != null && selectedView.isClicked()) {
+                            float distance = getDistanceBetweenPoints(deleteCenterPoint, stickerCenterPoint);
 
-                    // ---------------------------------- Translating ------------------------------
+                            // delete the layer
+                            if (distance <= (deleteIconSize * 2)) {
+                                deleteLayer(selectedLayerIndex);
+                                showDeleteArea = false;
 
-                    // updating the view position when Action Up | Translating
-                    RectF newRect = new RectF();
+                                // reset the icon size to normal
+                                float halfSize = deleteIconSize / 2;
+                                deleteIconRect = new RectF(
+                                        (deleteRect.centerX() - halfSize),
+                                        (deleteRect.centerY() - halfSize),
+                                        (deleteRect.centerX() + halfSize),
+                                        (deleteRect.centerY() + halfSize));
+                            }
 
-                    // to draw the bitmap from center of the touch point
+                            // reset the values
+                            selectedLayer.sticker.isScaled = false;
+                            selectedLayer.sticker.isTranslated = false;
+
+                        }
+
+                        int index = findSelectedViewIndex(rawX, rawY);
+                        Log.d("Haxx", "----------o ^ o--------------- " + index);
+                        if (index == -1) break;
+
+                        break;
+
+                    case MotionEvent.ACTION_POINTER_UP:
+                        // reset the 2nd touch pointer
+                        pointerId2 = INVALID_VALUE;
+                        startingRotation = INVALID_VALUE;
+                        startingScale = INVALID_VALUE;
+                        break;
+
+                    case MotionEvent.ACTION_MOVE:
+                        // only perform actions if view is clicked/selected
+                        if (selectedLayer != null && selectedLayer.sticker.isClicked()) {
+
+                            // ---------------------------------- Translating ------------------------------
+
+                            // updating the view position when Action Up | Translating
+                            RectF newRect = new RectF();
+
+                            // to draw the bitmap from center of the touch point
 //                    newRect.left = (int) (rawX - selectedView.rect.width() / 2.0);
 //                    newRect.top = (int) (rawY - selectedView.rect.height() / 2.0);
 //                    newRect.right = (int) newRect.left + selectedView.rect.width();
 //                    newRect.bottom = (int) newRect.top + selectedView.rect.height();
 
-                    // to draw the bitmap from left top of the touch point
+                            // to draw the bitmap from left top of the touch point
 //                    newRect.left = (int) (rawX);
 //                    newRect.top = (int) (rawY);
 //                    newRect.right = (int) newRect.left + selectedView.width;
 //                    newRect.bottom = (int) newRect.top + selectedView.height;
 
-                    // to draw the bitmap on the same place as before and move accordingly
-                    newRect.left = (rawX - dLeft);
-                    newRect.right = (rawX - dRight);
-                    newRect.top = (rawY - dTop);
-                    newRect.bottom = (rawY - dBottom);
+                            // to draw the bitmap on the same place as before and move accordingly
+                            newRect.left = (rawX - dLeft);
+                            newRect.right = (rawX - dRight);
+                            newRect.top = (rawY - dTop);
+                            newRect.bottom = (rawY - dBottom);
 
-                    selectedView.rect = newRect;
-                    selectedView.isTranslated = true;
+                            selectedLayer.sticker.rect = newRect;
+                            selectedLayer.sticker.isTranslated = true;
 
-                    Log.d(TAG, "---------- new rect---------");
-                    Log.d(TAG, "Left : " + selectedView.rect.left
-                            + "  |  Top : " + selectedView.rect.top
-                            + "  |  Right : " + selectedView.rect.right
-                            + "  |  Bottom : " + selectedView.rect.bottom);
-
-
-                    // --------------------------- Rotation & Scaling ------------------------------
-                    if (pointerId1 != INVALID_VALUE && pointerId2 != INVALID_VALUE) {
-                        PointF newSecondPoint = new PointF();
-                        PointF newFirstPoint = new PointF();
-
-                        // get touch points to calculate angle and distance
-                        getRawPoint(event, pointerId1, newFirstPoint);
-                        getRawPoint(event, pointerId2, newSecondPoint);
-
-                        angle = angleBetweenLines(secondPoint, firstPoint, newSecondPoint, newFirstPoint);
-                        Log.d(TAG, "---------- -Angle : " + angle + " --------- " + clickedIndex);
-
-                        // set the starting rotation
-                        if (startingRotation == INVALID_VALUE) {
-                            startingRotation = selectedView.getRotation();
-                        } else {
-                            // add new rotation in the starting rotation
-                            selectedView.setRotation(startingRotation + angle);
-                            selectedView.isRotated = true;
-                        }
+                            Log.d(TAG, "---------- new rect---------");
+                            Log.d(TAG, "Left : " + selectedLayer.sticker.rect.left
+                                    + "  |  Top : " + selectedLayer.sticker.rect.top
+                                    + "  |  Right : " + selectedLayer.sticker.rect.right
+                                    + "  |  Bottom : " + selectedLayer.sticker.rect.bottom);
 
 
-                        // scaling the image
-                        float distance = distanceBetweenLines(secondPoint, firstPoint, newSecondPoint, newFirstPoint);
+                            // --------------------------- Rotation & Scaling ------------------------------
+                            if (pointerId1 != INVALID_VALUE && pointerId2 != INVALID_VALUE) {
+                                PointF newSecondPoint = new PointF();
+                                PointF newFirstPoint = new PointF();
+
+                                // get touch points to calculate angle and distance
+                                getRawPoint(event, pointerId1, newFirstPoint);
+                                getRawPoint(event, pointerId2, newSecondPoint);
+
+                                angle = angleBetweenLines(secondPoint, firstPoint, newSecondPoint, newFirstPoint);
+
+                                // set the starting rotation
+                                if (startingRotation == INVALID_VALUE) {
+                                    startingRotation = selectedLayer.sticker.getRotation();
+                                } else {
+                                    // add new rotation in the starting rotation
+                                    selectedLayer.sticker.setRotation(startingRotation + angle);
+                                    selectedLayer.sticker.isRotated = true;
+                                }
 
 
-                        // set the bitmap original scale as starting scale
-                        if (startingScale == INVALID_VALUE) {
-                            startingScale = selectedView.scale;
-                        } else {
-                            // calculate the scale from the distance
-                            float scale = distance / SCALING_SENSITIVITY;
-                            Log.d(TAG, " Scale :  " + scale + " ------- Distance : --> " + distance);
-                            scale = startingScale + scale; // add new scale in starting scale
-                            // set the new scale with within min & max limits
-                            scale = getBoundedScale(scale);
-                            selectedView.scale = scale;
-                            selectedView.isScaled = true;
+                                // scaling the image
+                                float distance = distanceBetweenLines(secondPoint, firstPoint, newSecondPoint, newFirstPoint);
 
-                            // when scaling the Rect, Also update the difference from touch place to selected Rect
-//                            float halfScale = scale / 2.0f;
-//                            dLeft = (rawX - selectedView.rect.left) * halfScale;
-//                            dRight = dRight * halfScale;
-//                            dTop = dTop * halfScale;
-//                            dBottom = dBottom * halfScale;
-//                            dRight = (rawX - selectedView.rect.right);
-//                            dTop = (rawY - selectedView.rect.top);
-//                            dBottom = (rawY - selectedView.rect.bottom);
 
-//                            int scaledX = (int) ((selectedView.startingRectF.width() * scale) - selectedView.startingRectF.width());
-//                            int scaledY = (int) ((selectedView.startingRectF.height() * scale) - selectedView.startingRectF.height());
+                                // set the bitmap original scale as starting scale
+                                if (startingScale == INVALID_VALUE) {
+                                    startingScale = selectedLayer.sticker.scale;
+                                } else {
+                                    // calculate the scale from the distance
+                                    float scale = distance / SCALING_SENSITIVITY;
+                                    Log.d(TAG, " Scale :  " + scale + " ------- Distance : --> " + distance);
+                                    scale = startingScale + scale; // add new scale in starting scale
+                                    // set the new scale with within min & max limits
+                                    scale = getBoundedScale(scale);
+                                    selectedLayer.sticker.scale = scale;
+                                    selectedLayer.sticker.isScaled = true;
+                                }
+                            }
+
+                            //------------------------ Delete Sticker ------------------------------
+                            // check if the sticker is near the delete area
+                            PointF stickerCenterPoint = new PointF(
+                                    selectedLayer.sticker.borderRect.centerX(),
+                                    selectedLayer.sticker.borderRect.centerY());
+                            float distance = getDistanceBetweenPoints(deleteCenterPoint, stickerCenterPoint);
+
+                            // show/hide the delete area
+                            float halfSize = deleteIconSize / 2;
+                            if (distance <= showDeleteAreaDistance) {
+                                showDeleteArea = true;
+
+//                                if (distance < animationStartDist) {
+//                                    Log.d("ICON", "- - - - - - - - - - " + distance + " - - - - - - - - - - - -");
+//                                    float rate = (animationStartDist - animationEndDist) /
+//                                            (animationMinScale - animationMaxScale);
+//                                    Log.d("ICON", "Rate   : " + rate);
 //
-//                            selectedView.rect.left = selectedView.startingRectF.left - scaledX;
-//                            selectedView.rect.top = selectedView.startingRectF.top - scaledY;
-//                            selectedView.rect.right = selectedView.startingRectF.right + scaledX;
-//                            selectedView.rect.bottom = selectedView.startingRectF.bottom + scaledY;
+//                                    float diff = animationStartDist + distance;
+//                                    Log.d("ICON", "Diff   : " + diff);
+//
+//                                    float addedRatio = diff / rate;
+//                                    Log.d("ICON", "added  : " + addedRatio);
+//                                    distanceRatio = animationMinScale + addedRatio;
+//                                    Log.d("ICON", "Ratio : " + distanceRatio);
+//
+////                                    float deleteThreshold = deleteIconSize * 2;
+////                                    Log.d("ICON", "ratio : " + distance + " / " + deleteThreshold);
+////                                    distanceRatio = distance / deleteThreshold;
+////                                    distanceRatio = Math.min(2f, Math.max(1f, distanceRatio));
+////                                    Log.d("ICON", "distance Ratio : " + distanceRatio);
+////                                    distanceRatio = 3.0f - distanceRatio;
+////                                    Log.d("ICON", "final distance : " + distanceRatio);
+//
+//                                    // scale by the distance ratio
+//                                    deleteIconRect = new RectF(
+//                                            (deleteRect.centerX() - halfSize * distanceRatio),
+//                                            (deleteRect.centerY() - halfSize * distanceRatio),
+//                                            (deleteRect.centerX() + halfSize * distanceRatio),
+//                                            (deleteRect.centerY() + halfSize * distanceRatio));
+//                                }
+
+
+                            } else {
+                                showDeleteArea = false;
+                                distanceRatio = 1;
+                            }
+
+                            // show the change
+                            invalidate();
                         }
-                    }
+                        break;
 
-                    // also update the selection border of the View
-//                    selectedView.updateBorderRect(context);
+                    case MotionEvent.ACTION_CANCEL:
+                        // reset values
+                        pointerId1 = INVALID_VALUE;
+                        pointerId2 = INVALID_VALUE;
+                        startingRotation = INVALID_VALUE;
+                        startingScale = INVALID_VALUE;
+                        if (selectedLayer != null) {
+                            selectedLayer.sticker.isScaled = false;
+                            selectedLayer.sticker.isTranslated = false;
+                        }
+                        break;
 
-                    // show the change
-                    invalidate();
+                    default:
+                        return false;
                 }
-                break;
 
-            case MotionEvent.ACTION_CANCEL:
-                // reset values
-                pointerId1 = INVALID_VALUE;
-                pointerId2 = INVALID_VALUE;
-                startingRotation = INVALID_VALUE;
-                startingScale = INVALID_VALUE;
-                if (selectedView != null) {
-                    selectedView.isScaled = false;
-                    selectedView.isTranslated = false;
-                }
-                break;
-
-            default:
-                return false;
-        }
-
-        return true;
-    }
-
-    private float getBoundedScale(float scale) {
-        return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
-    }
-
-    private void moveViewToTop(int index) {
-        if (views != null && views.size() > index) {
-            final MyBitmap removeView = views.remove(index); // removed from index
-            views.add(removeView); // and added on top of the list
+            } catch (Exception e) {
+                final String message = e.getMessage();
+                Log.d("Exception : ", message);
+                e.printStackTrace();
+                Toast.makeText(context, "Exception on Touch : " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+            return true;
+        } else {
+            return false;
         }
     }
 
-    // region H E L P E R S   M E T H O D S   F O R    G E S T U R E S
+    // region --> H E L P E R S   M E T H O D S   F O R    G E S T U R E S <--
 
     private int findSelectedViewIndex(float x, float y) {
         int selectedIndex = INVALID_VALUE;
-        for (int i = views.size() - 1; i >= 0; i--) {
-            if (isInsideRect(x, y, views.get(i).borderRect)) {
+
+        // travers from top to bottom
+        for (int i = layers.size() - 1; i >= 0; i--) {
+            final LayerModel layerModel = layers.get(i);
+            if (layerModel.type == LayerModel.STICKER // layer is a sticker
+                    && isInsideRect(x, y, layerModel.sticker.borderRect)) {//touch is within the sticker area
                 selectedIndex = i;
                 break;
             }
@@ -410,13 +576,28 @@ public class MyCanvas extends View {
         return selectedIndex;
     }
 
+    private int moveViewToTop(int index) {
+        if (layers != null && layers.size() > index) {
+            final LayerModel removeView = layers.remove(index); // removed from index
+            layers.add(removeView); // and added on top of the list
+            return layers.size() - 1;
+        } else {
+            return INVALID_VALUE;
+        }
+    }
+
     private boolean isInsideRect(float x, float y, RectF rect) {
+        Log.d(TAG, "TEST_BORDER chek : Left : " + rect.left + "  |  Top : " + rect.top + "  |  Right : " + rect.right + "  |  Bottom : " + rect.bottom);
         return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    }
+
+    private float getBoundedScale(float scale) {
+        return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
     }
 
     void getRawPoint(MotionEvent ev, int index, PointF point) {
         final int[] location = {0, 0};
-        selectedView.getLocationOnScreen(location);
+        selectedLayer.sticker.getLocationOnScreen(location);
 
         float x = ev.getX(index);
         float y = ev.getY(index);
@@ -442,40 +623,117 @@ public class MyCanvas extends View {
     }
 
     private float distanceBetweenLines(PointF secondPoint, PointF firstPoint, PointF newSecondPoint, PointF newFirstPoint) {
-        float beforeDistance =
-                (float) Math.sqrt( // sqrt of sum of x, y points differences
-                        Math.pow( // power of difference of x points
-                                Math.max(firstPoint.x, secondPoint.x) // x1
-                                        -                                     // difference
-                                        Math.min(firstPoint.x, secondPoint.x) // x2
-                                , 2) // power of 2
-                                +
-                                Math.pow( // power of differences of y points
-                                        Math.max(firstPoint.y, secondPoint.y) // y 1
-                                                -                             // difference
-                                                Math.min(firstPoint.y, secondPoint.y) // y2
-                                        , 2) // power of 2
-                );
-
-        float afterDistance =
-                (float) Math.sqrt( // sqrt of sum of x, y points differences
-                        Math.pow( // power of difference of x points
-                                Math.max(newFirstPoint.x, newSecondPoint.x) // x1
-                                        -                                     // difference
-                                        Math.min(newFirstPoint.x, newSecondPoint.x) // x2
-                                , 2) // power of 2
-                                +
-                                Math.pow( // power of differences of y points
-                                        Math.max(newFirstPoint.y, newSecondPoint.y) // y 1
-                                                -                             // difference
-                                                Math.min(newFirstPoint.y, newSecondPoint.y) // y2
-                                        , 2) // power of 2
-                );
-
+        float beforeDistance = getDistanceBetweenPoints(secondPoint, firstPoint);
+        float afterDistance = getDistanceBetweenPoints(newSecondPoint, newFirstPoint);
         final float diff = afterDistance - beforeDistance; // distance covered
         Log.d(TAG, " Distance :  " + beforeDistance + "  -  " + afterDistance + "  =  " + diff);
         return diff;
     }
 
+    private float getDistanceBetweenPoints(PointF secondPoint, PointF firstPoint) {
+        return (float) Math.sqrt( // sqrt of sum of x, y points differences
+                Math.pow( // power of difference of x points
+                        Math.max(firstPoint.x, secondPoint.x) // x1
+                                -                                     // difference
+                                Math.min(firstPoint.x, secondPoint.x) // x2
+                        , 2) // power of 2
+                        +
+                        Math.pow( // power of differences of y points
+                                Math.max(firstPoint.y, secondPoint.y) // y 1
+                                        -                             // difference
+                                        Math.min(firstPoint.y, secondPoint.y) // y2
+                                , 2) // power of 2
+        );
+    }
+
+    private void deleteLayer(int selectedLayerIndex) {
+        layers.remove(selectedLayerIndex);
+    }
+
     // endregion
+
+
+    // region  --> E F F E C T S <--
+
+    public void adjustColor(float value, int type) {
+        //get the paint layer & change the saturation value
+        LayerModel layerModel = layers.get(1);
+
+        // change the value
+        switch (type) {
+            case LayerModel.BRIGHTNESS:
+                layerModel.brightness = value;
+                break;
+            case LayerModel.CONTRAST:
+                layerModel.contrast = value;
+                break;
+            case LayerModel.SATURATION:
+                layerModel.saturation = value;
+                break;
+            case LayerModel.WARMTH:
+                layerModel.hue = value;
+                break;
+        }
+
+        // get & set color filter
+        ColorFilter colorFilter = PaintFactory.adjustColor(layerModel);
+        layerModel.paint.setColorFilter(colorFilter);
+        layers.set(1, layerModel);
+        invalidate(); // invalidate to show changes
+    }
+
+    public void adjustColors() {
+        //get the paint layer & change the saturation value
+        LayerModel layerModel = layers.get(1);
+        // get & set color filter
+        ColorFilter colorFilter = PaintFactory.adjustColor(layerModel);
+        layerModel.paint.setColorFilter(colorFilter);
+        layers.set(1, layerModel);
+        invalidate(); // invalidate to show changes
+    }
+
+    public void addPaintLayer() {
+        if (!isPaintAdded()) { // paint layers is not added yet
+            ColorFilter colorFilter = PaintFactory.adjustColor(50, 50, 50, 50);
+            Paint paint = new Paint();
+            paint.setColorFilter(colorFilter);
+            LayerModel layerModel = new LayerModel(paint);
+            layers.add(1, layerModel);
+        }
+        invalidate();
+    }
+
+    public LayerModel getPaintLayer() {
+        if (!isPaintAdded()) { // paint layers is not added yet
+            ColorFilter colorFilter = PaintFactory.adjustColor(50, 50, 50, 50);
+            Paint paint = new Paint();
+            paint.setColorFilter(colorFilter);
+            LayerModel layerModel = new LayerModel(paint);
+            layers.add(1, layerModel);
+        }
+        final LayerModel copy = layers.get(1).copy();
+        return copy;
+    }
+
+    public void setPaintLayer(LayerModel layerModel) {
+        if (!isPaintAdded()) { // paint layers is not added yet
+            layers.add(1, layerModel);
+        } else {
+            layers.set(1, layerModel);
+        }
+        adjustColors();
+    }
+
+    private boolean isPaintAdded() {
+        boolean found = false;
+        for (LayerModel layer : layers) {
+            if (layer.type == LayerModel.PAINT) {
+                found = true;
+                break;
+            }
+        }
+        return found;
+    }
+
+    //endregion
 }

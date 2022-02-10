@@ -29,7 +29,6 @@ import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.drudotstech.ViewImageActivity;
-import com.drudotstech.customgallery.EditMainActivity;
 import com.drudotstech.customgallery.R;
 import com.drudotstech.customgallery.crop.CropImage;
 import com.drudotstech.customgallery.crop.MyCropActivity;
@@ -43,6 +42,7 @@ import com.drudotstech.customgallery.gallery.models.GalleryResult;
 import com.drudotstech.customgallery.gallery.recyclerview.MarginDecoration;
 import com.drudotstech.customgallery.gallery.utils.GalleryConfig;
 import com.drudotstech.customgallery.gallery.utils.GalleryConstants;
+import com.drudotstech.customgallery.mycanvas.EditorActivity;
 import com.drudotstech.customgallery.utils.FileUtils;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -426,7 +426,7 @@ public class AllPicturesActivity extends AppCompatActivity implements PicturesAd
 
         if (path == null) return; // null check
         // creating uri
-        startActivity(new Intent(context, EditMainActivity.class)
+        startActivity(new Intent(context, EditorActivity.class)
                 .putExtra("media", path));
     }
 
@@ -473,7 +473,7 @@ public class AllPicturesActivity extends AppCompatActivity implements PicturesAd
         if (requestCode == REQUEST_CROPPY && data != null) {
             final Uri uri = data.getData();
             String mediaPath = FileUtils.getPath(context, uri);
-            editPictureLauncher.launch(new Intent(context, EditMainActivity.class).putExtra("media", mediaPath));
+            editPictureLauncher.launch(new Intent(context, EditorActivity.class).putExtra("media", mediaPath));
         } else if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
             CropImage.ActivityResult result = CropImage.getActivityResult(data);
             if (resultCode == RESULT_OK) {

@@ -47,21 +47,20 @@ import com.google.android.material.slider.Slider;
 import java.util.ArrayList;
 import java.util.List;
 
-@SuppressLint("SetTextI18n")
-public class EditorActivity extends BaseActivity implements FilterAdapter.FilterSelectionCallback,
+public class EditorActivity2 extends BaseActivity implements FilterAdapter.FilterSelectionCallback,
         BlurBitmapCallback, SelectStickerCallback, FilterTask.ApplyFilterCallback {
 
 
     // ------------------------------------- C O N S T A N T S  ------------------------------------
-    private final Context context = EditorActivity.this;
+    private final Context context = EditorActivity2.this;
     public Bitmap originalBitmap;
     public Bitmap blurredBitmap;
 
+
     // ---------------------------------------- V I E W S ------------------------------------------
     private View ivFilter, ivAdjust, ivStickers, ivText;
-    private View secondToolbar;
-    private RelativeLayout mainToolbar, rlBottom;
-    private ImageView ivOriginal;
+    private View mainToolbar, secondToolbar;
+    private ImageView ivOriginal, ivBlurred;
     private RelativeLayout rlCanvas;
     private View ivBack, ivClose, tvSave, tvDone;
     private TextView tvToolbarName;
@@ -84,15 +83,14 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     // -------------------------------------- V A R I A B L E S ------------------------------------
     private MyCanvas myCanvas;
     private CanvasState memento;
-    private LayerModel paintLayerMemento;
     private AnimationHelper animationHelper = null;
     private Bitmap tempBitmap;
     private FilterType filterType;
     private String media;
-    private float brightness = 50;
-    private float contrast = 50;
-    private float saturation = 50;
-    private float warmth = 50;
+    private int brightness = 50;
+    private int contrast = 50;
+    private int saturation = 50;
+    private int warmth = 50;
     private int selected = -1; // 0 , 1, 2, 3, 4 -> for bottom options
 
     // to only scroll once per scrolling
@@ -113,20 +111,20 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_editor);
+        setContentView(R.layout.activity_editor2);
 
         //--------------------------------- I N I T   V I E W S ------------------------------------
-        rlBottom = findViewById(R.id.rl_bottom);
         mainToolbar = findViewById(R.id.main_action_bar);
         ivBack = findViewById(R.id.iv_back);
-
         tvSave = findViewById(R.id.tv_next);
+
         secondToolbar = findViewById(R.id.second_action_bar);
         ivClose = findViewById(R.id.iv_close);
         tvToolbarName = findViewById(R.id.tv_actionbar_name);
         tvDone = findViewById(R.id.tv_done);
 
         ivOriginal = findViewById(R.id.iv_original_image);
+        ivBlurred = findViewById(R.id.iv_blurred_image);
         rlCanvas = findViewById(R.id.rl_canvas);
 
         ivFilter = findViewById(R.id.iv_filter);
@@ -160,7 +158,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         media = getIntent().getStringExtra("media");
 
         //create bitmap from media and load in imageView
-        initCanvas();
+        loadBitmaps();
 
         // set Filters RecyclerView
         setRecyclerView();
@@ -192,41 +190,27 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         ivAdjust.setOnClickListener(view -> {
             selected = 1;
             showSecondMenu(true);
-
-            // add the paint layer if not already added
-            myCanvas.addPaintLayer();
-
-            // save the current canvas state
             saveCurrentState();
         });
 
         llBrightness.setOnClickListener(view -> {
             selected = 4;
-            // save the current paint layer
-            paintLayerMemento = myCanvas.getPaintLayer();
-
             showSecondMenu(true);
         });
 
         llContrast.setOnClickListener(view -> {
             selected = 5;
             showSecondMenu(true);
-            // save the current paint layer
-            paintLayerMemento = myCanvas.getPaintLayer();
         });
 
         llSaturation.setOnClickListener(view -> {
             selected = 6;
             showSecondMenu(true);
-            // save the current paint layer
-            paintLayerMemento = myCanvas.getPaintLayer();
         });
 
         llWarmth.setOnClickListener(view -> {
             selected = 7;
             showSecondMenu(true);
-            // save the current paint layer
-            paintLayerMemento = myCanvas.getPaintLayer();
         });
 
 
@@ -235,7 +219,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             selected = 2;
             showSecondMenu(true);
             saveCurrentState();
-            myCanvas.setSelectionEnabled(true);
         });
 
         ivAddSticker.setOnClickListener(v -> {
@@ -248,39 +231,14 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         // --------------- Others -----------------------
 
         // save the current changes
-        tvDone.setOnClickListener(view -> {
-
-            // hide the main menus
-            switch (selected) {
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                    showSecondMenu(false);
-                    break;
-            }
-
-            myCanvas.setSelectionEnabled(false); // disable selection
-
-            // selected is within the adjust menu range
-            if (selected >= 4 && selected <= 7) {
-                // update the adjust memento
-                paintLayerMemento = myCanvas.getPaintLayer();
-                showSecondMenu(false);
-            }
-        });
+        tvDone.setOnClickListener(view -> saveChanges());
 
         // close without applying changes
         ivClose.setOnClickListener(view -> {
-            if (selected >= 4 && selected <= 7) { // Slider of adjust options are opened, so don't revert
+            if (selected > 3) { // Slider of adjust options are opened, so don't reset
                 showSecondMenu(false);
-                // revert back to the adjust memento
-                if (paintLayerMemento != null)
-                    myCanvas.setPaintLayer(paintLayerMemento);
-                // also reset the
             } else {
-                revertBackToPreviousState(); // revert to memento state
-                myCanvas.setSelectionEnabled(false); // disable selection
+                revertBackToPreviousState();
                 showSecondMenu(false);
             }
         });
@@ -300,36 +258,46 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
     @SuppressLint("RestrictedApi")
     private void setSliderChangeListener() {
-
-        slider.addOnChangeListener(new Slider.OnChangeListener() {
+        slider.addOnSliderTouchListener(new Slider.OnSliderTouchListener() {
             @Override
-            public void onValueChange(@NonNull Slider slider, float value, boolean fromUser) {
+            public void onStartTrackingTouch(@NonNull Slider slider) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(@NonNull Slider slider) {
+                final int value = (int) slider.getValue();
                 switch (selected) {
                     case 4:
                         brightness = value;
-                        tvSlider.setText(((int) brightness) + "");
-                        myCanvas.adjustColor(brightness, LayerModel.BRIGHTNESS);
+                        tvSlider.setText(brightness + "");
+//                        rlCanvas.setBrightness(brightness / 50.0f);
                         break;
 
                     case 5:
                         contrast = value;
-                        tvSlider.setText(((int) contrast) + "");
-                        myCanvas.adjustColor(contrast, LayerModel.CONTRAST);
+                        tvSlider.setText(contrast + "");
+//                        ivImageFilterView.setContrast(contrast / 50.0f);
                         break;
 
                     case 6:
                         saturation = value;
-                        tvSlider.setText(((int) saturation) + "");
-                        myCanvas.adjustColor(saturation, LayerModel.SATURATION);
+                        tvSlider.setText(saturation + "");
+//                        ivImageFilterView.setSaturation(saturation / 50.0f);
                         break;
 
                     case 7:
                         warmth = value;
-                        tvSlider.setText(((int) warmth) + "");
-                        myCanvas.adjustColor(warmth, LayerModel.WARMTH);
+                        tvSlider.setText(warmth + "");
+                        if (warmth == 50) {
+//                            ivImageFilterView.setWarmth(1);
+                        } else if (warmth > 50) {
+//                            ivImageFilterView.setWarmth(2);
+                        } else {
+//                            ivImageFilterView.setWarmth(5);
+                        }
                         break;
                 }
-
             }
         });
     }
@@ -340,15 +308,26 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             myCanvas.updateFromCanvasState(memento);
 
         // resetting image filter view
-//        brightness = 50;
-//        contrast = 50;
-//        saturation = 50;
-//        warmth = 50;
+        brightness = 50;
+        contrast = 50;
+        saturation = 50;
+        warmth = 50;
     }
 
     private void saveChanges() {
 
+        if (selected > 3) {
+            showSecondMenu(false);
+        }
 
+        switch (selected) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+                showSecondMenu(false);
+                break;
+        }
     }
 
     private void showSecondMenu(boolean shouldShowSecondToolbar) {
@@ -387,29 +366,29 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 ///  --------- sub menus ------------------
                 case 4:
                     tvToolbarName.setText("Brightness");
-                    slider.setValue((int) brightness);
-                    tvSlider.setText(((int) brightness) + "");
+                    slider.setValue(brightness);
+                    tvSlider.setText(brightness + "");
                     showSlider(true);
                     break;
 
                 case 5:
                     tvToolbarName.setText("Contrast");
-                    slider.setValue((int) contrast);
-                    tvSlider.setText(((int) contrast) + "");
+                    slider.setValue(contrast);
+                    tvSlider.setText(contrast + "");
                     showSlider(true);
                     break;
 
                 case 6:
                     tvToolbarName.setText("Saturation");
-                    slider.setValue((int) saturation);
-                    tvSlider.setText(((int) saturation) + "");
+                    slider.setValue(saturation);
+                    tvSlider.setText(saturation + "");
                     showSlider(true);
                     break;
 
                 case 7:
                     tvToolbarName.setText("Warmth");
-                    slider.setValue((int) warmth);
-                    tvSlider.setText(((int) warmth) + "");
+                    slider.setValue(warmth);
+                    tvSlider.setText(warmth + "");
                     showSlider(true);
                     break;
             }
@@ -497,7 +476,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         rvFilters.setAdapter(filterAdapter);
     }
 
-    private void initCanvas() {
+    private void loadBitmaps() {
         showLoading();
         try {
             Glide.with(context)
@@ -509,40 +488,31 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                             originalBitmap = resource;
 
                             ivOriginal.setImageBitmap(resource);
-
-                            // create canvas
-                            myCanvas = new MyCanvas(context);
-
-                            // add canvas to the relative layout
-                            rlCanvas.addView(myCanvas);
-
-                            // set height & width
-                            final int bottomHeight = rlBottom.getLayoutParams().height;
-                            final int topHeight = mainToolbar.getLayoutParams().height;
-                            CanvasUtils.offsetFromScreen = (float) (bottomHeight + topHeight);
-
-                            float screenWidth = CanvasUtils.getScreenWidth(context);
-                            float screenHeight = CanvasUtils.getScreenHeight(context);
-                            final RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) myCanvas.getLayoutParams();
-                            layoutParams.height = (int) screenHeight - topHeight - bottomHeight;
-                            layoutParams.width = (int) screenWidth;
-                            myCanvas.setLayoutParams(layoutParams);
-                            myCanvas.init();
-
-                            // add the first layer
-                            Bitmap tempBitmap = CanvasUtils.getScreenFitBitmap(context, originalBitmap);
-                            RectF rectF = CanvasUtils.getCenteredRect(context, tempBitmap);
-                            myCanvas.addLayer(new LayerModel(tempBitmap, rectF, FilterType.NO_FILTER));
+                            initCanvas(null);
 
                             blurredBitmap = originalBitmap.copy(originalBitmap.getConfig(), true);
                             blurredBitmap = CanvasUtils.getScreenFillBitmap(context, blurredBitmap);
-                            new BlurTask(context, blurredBitmap, 32, EditorActivity.this).execute();
+                            new BlurTask(context, blurredBitmap, 32, EditorActivity2.this).execute();
                         }
                     });
+
         } catch (Exception e) {
             hideLoading();
             Toast.makeText(context, "Exception in load bitmap : " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void initCanvas(Bitmap blurredBitmap) {
+        // create canvas
+        myCanvas = new MyCanvas(this);
+
+        // add canvas to the relative layout
+        rlCanvas.addView(myCanvas);
+
+        // add the first layer
+        Bitmap tempBitmap = CanvasUtils.getScreenFitBitmap(context, originalBitmap);
+        RectF rectF = CanvasUtils.getCenteredRect(context, tempBitmap);
+        myCanvas.addLayer(new LayerModel( tempBitmap, rectF, FilterType.NO_FILTER));
     }
 
     @Override
@@ -550,7 +520,9 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         hideLoading();
         if (bitmapResult.isStatus()) {
             blurredBitmap = bitmapResult.getBitmap();
+            ivBlurred.setImageBitmap(blurredBitmap);
             myCanvas.addBackgroundBitmap(blurredBitmap);
+
         } else {
             final Exception exception = bitmapResult.getException();
             Toast.makeText(context, "Exception : " + exception.getMessage(), Toast.LENGTH_SHORT).show();
@@ -617,7 +589,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             // add temp bitmap in the canvas
             Bitmap tempBitmap = bitmapResult.getBitmap();
             RectF rectF = CanvasUtils.getCenteredRect(context, tempBitmap);
-            LayerModel filterLayer = new LayerModel(tempBitmap, rectF, filterType);
+            LayerModel filterLayer = new LayerModel( tempBitmap, rectF, filterType);
             myCanvas.addLayer(filterLayer);
         } else {
             final Exception exception = bitmapResult.getException();
@@ -633,7 +605,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         try {
             Bitmap sticker = CanvasUtils.getBitmapFromVector(context, stickerSrc);
             StickerView stickerView = new StickerView(context, sticker);
-            LayerModel filterLayer = new LayerModel(stickerView);
+            LayerModel filterLayer = new LayerModel( stickerView);
             myCanvas.addLayer(filterLayer);
 
             if (stickersBottomSheet != null)

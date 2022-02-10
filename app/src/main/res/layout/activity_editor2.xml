@@ -108,12 +108,19 @@
 
     </RelativeLayout>
 
-    <RelativeLayout
-        android:id="@+id/rl_canvas"
+    <ImageView
+        android:id="@+id/iv_blurred_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/rl_bottom"
         android:layout_below="@id/toolbar"
+        android:scaleType="centerCrop" />
+
+    <RelativeLayout
+        android:id="@+id/rl_canvas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
         android:gravity="center"></RelativeLayout>
 
 
@@ -208,7 +215,7 @@
             android:gravity="center_horizontal"
             android:paddingHorizontal="@dimen/_8sdp"
             android:visibility="gone"
-            android:weightSum="4">
+            android:weightSum="3">
 
             <LinearLayout
                 android:id="@+id/ll_brightness"
@@ -298,7 +305,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:orientation="vertical"
-                android:visibility="visible">
+                android:visibility="gone">
 
                 <ImageView
                     android:layout_width="@dimen/_16sdp"
@@ -310,7 +317,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/_8sdp"
                     android:fontFamily="@font/metropolis_medium"
-                    android:text="Hue"
+                    android:text="Warmth"
                     android:textColor="@color/white"
                     android:textSize="@dimen/_10ssp" />
 
@@ -344,7 +351,8 @@
                 android:id="@+id/slider"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:value="50"
+                android:stepSize="1.0"
+                android:value="50.0"
                 android:valueFrom="0.0"
                 android:valueTo="100.0"
                 app:thumbColor="@color/white"

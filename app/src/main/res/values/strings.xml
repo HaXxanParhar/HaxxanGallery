@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CustomGallery</string>
+    <string name="app_name">Photo Editor</string>
 
     <string name="crop_image_activity_title"></string>
     <string name="crop_image_menu_rotate_left">Rotate counter clockwise</string>
@@ -464,5 +464,7 @@
         <item>u+1f4cd</item>
         <item>u+1f6a9</item>
     </string-array>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

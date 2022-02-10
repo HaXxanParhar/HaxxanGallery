@@ -16,7 +16,7 @@ import androidx.renderscript.ScriptIntrinsicBlur;
 public class BlurUtil {
     private static final float BLUR_RADIUS = 25f;
 
-    public static Bitmap blur(Context context, Bitmap image, int iterations) {
+    public Bitmap blur(Context context, Bitmap image, int iterations) {
         int width = Math.round(image.getWidth());
         int height = Math.round(image.getHeight());
         Bitmap inputBitmap = Bitmap.createScaledBitmap(image, width, height, false);

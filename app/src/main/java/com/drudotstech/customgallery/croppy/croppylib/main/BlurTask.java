@@ -35,10 +35,10 @@ public class BlurTask extends AsyncTask<Void, Void, BitmapResult> {
     @Override
     protected BitmapResult doInBackground(Void... voids) {
         try {
-            bitmap = BlurUtil.blur(context, bitmap, iterations);
-            return new BitmapResult(bitmap, true);
+            bitmap = new BlurUtil().blur(context, bitmap, iterations);
+            return new BitmapResult(true, bitmap);
         } catch (Exception e) {
-            return new BitmapResult(null, false);
+            return new BitmapResult(false, e);
         }
 
     }

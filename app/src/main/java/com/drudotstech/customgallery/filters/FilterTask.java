@@ -3,6 +3,7 @@ package com.drudotstech.customgallery.filters;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 
 import androidx.renderscript.Allocation;
 import androidx.renderscript.RenderScript;
@@ -12,6 +13,7 @@ import com.drudotstech.customgallery.ScriptC_blue;
 import com.drudotstech.customgallery.ScriptC_filter1;
 import com.drudotstech.customgallery.ScriptC_histEq;
 import com.drudotstech.customgallery.ScriptC_warm;
+import com.drudotstech.customgallery.croppy.croppylib.main.BitmapResult;
 import com.drudotstech.customgallery.utils.MyUtils;
 
 /********** Developed by Drudots Technology **********
@@ -19,9 +21,37 @@ import com.drudotstech.customgallery.utils.MyUtils;
  ******************************************************/
 
 
-public class FilterUtils {
+public class FilterTask extends AsyncTask<Void, Void, BitmapResult> {
 
-    public static Bitmap applyFilter(Context context, Bitmap image, FilterType filterType) {
+    private Context context;
+    private Bitmap image;
+    private FilterType filterType;
+    private ApplyFilterCallback applyFilterCallback;
+
+    public FilterTask(Context context, Bitmap image, FilterType filterType, ApplyFilterCallback applyFilterCallback) {
+        this.context = context;
+        this.image = image;
+        this.filterType = filterType;
+        this.applyFilterCallback = applyFilterCallback;
+    }
+
+    @Override
+    protected BitmapResult doInBackground(Void... voids) {
+        try {
+            Bitmap bitmap = applyFilter();
+            return new BitmapResult(true, bitmap);
+        } catch (Exception e) {
+            return new BitmapResult(false, e);
+        }
+    }
+
+    @Override
+    protected void onPostExecute(BitmapResult bitmapResult) {
+        super.onPostExecute(bitmapResult);
+        applyFilterCallback.onFilterApplied(bitmapResult);
+    }
+
+    public Bitmap applyFilter() {
 
         //Create new bitmap
         Bitmap res = image.copy(image.getConfig(), true);
@@ -70,7 +100,7 @@ public class FilterUtils {
         return image;
     }
 
-    private static Bitmap filter1(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
+    private Bitmap filter1(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
 
         // creating Filter Bitmap
         Bitmap filterBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.karachi);
@@ -97,7 +127,7 @@ public class FilterUtils {
         return res;
     }
 
-    private static Bitmap filter2(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
+    private Bitmap filter2(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
 
         // creating Filter Bitmap
         Bitmap filterBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.quetta);
@@ -124,7 +154,7 @@ public class FilterUtils {
         return res;
     }
 
-    private static Bitmap rainbow(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
+    private Bitmap rainbow(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
 
         // creating Filter Bitmap
         Bitmap filterBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.filter_png);
@@ -151,7 +181,7 @@ public class FilterUtils {
         return res;
     }
 
-    private static Bitmap anthony(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
+    private Bitmap anthony(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
 
         // creating Filter Bitmap
         Bitmap filterBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.filter_anthony);
@@ -178,7 +208,7 @@ public class FilterUtils {
         return res;
     }
 
-    private static Bitmap mark(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
+    private Bitmap mark(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
 
         // creating Filter Bitmap
         Bitmap filterBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.filter_mark);
@@ -205,7 +235,7 @@ public class FilterUtils {
         return res;
     }
 
-    private static Bitmap deepBlue(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
+    private Bitmap deepBlue(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
         //Create script from rs file.
         ScriptC_blue histEqScript = new ScriptC_blue(rs);
 
@@ -223,7 +253,7 @@ public class FilterUtils {
         return res;
     }
 
-    private static Bitmap summer(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
+    private Bitmap summer(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
         //Create script from rs file.
         ScriptC_warm histEqScript = new ScriptC_warm(rs);
 
@@ -241,7 +271,7 @@ public class FilterUtils {
         return res;
     }
 
-    private static Bitmap histogramEqualization(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
+    private Bitmap histogramEqualization(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
         //Create script from rs file.
         ScriptC_histEq histEqScript = new ScriptC_histEq(rs);
 
@@ -271,4 +301,10 @@ public class FilterUtils {
         rs.destroy();
         return res;
     }
+
+
+    public interface ApplyFilterCallback {
+        void onFilterApplied(BitmapResult bitmap);
+    }
+
 }

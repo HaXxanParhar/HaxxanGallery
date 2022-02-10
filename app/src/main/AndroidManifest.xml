@@ -24,6 +24,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CustomGallery"
         tools:ignore="HardcodedDebugMode">
+
+        <activity android:name=".mycanvas.EditorActivity2" />
+
+        <activity android:name=".mycanvas.EditorActivity"></activity>
         <activity
             android:name=".StickersActivity"
             android:exported="false" />
