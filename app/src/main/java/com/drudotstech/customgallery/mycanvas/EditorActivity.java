@@ -1,12 +1,15 @@
 package com.drudotstech.customgallery.mycanvas;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -24,6 +27,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -39,9 +44,19 @@ import com.drudotstech.customgallery.filters.FilterAdapter;
 import com.drudotstech.customgallery.filters.FilterModel;
 import com.drudotstech.customgallery.filters.FilterTask;
 import com.drudotstech.customgallery.filters.FilterType;
+import com.drudotstech.customgallery.mycanvas.bottom_sheets.EmojisBottomSheet;
+import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectEmojiCallback;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectStickerCallback;
+import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectWidgetCallback;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.StickersBottomSheet;
+import com.drudotstech.customgallery.mycanvas.bottom_sheets.WidgetModel;
+import com.drudotstech.customgallery.mycanvas.bottom_sheets.WidgetsBottomSheet;
 import com.drudotstech.customgallery.utils.AnimationHelper;
+import com.drudotstech.customgallery.utils.MyUtils;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.slider.Slider;
 
 import java.util.ArrayList;
@@ -49,9 +64,11 @@ import java.util.List;
 
 @SuppressLint("SetTextI18n")
 public class EditorActivity extends BaseActivity implements FilterAdapter.FilterSelectionCallback,
-        BlurBitmapCallback, SelectStickerCallback, FilterTask.ApplyFilterCallback {
+        BlurBitmapCallback, SelectStickerCallback, FilterTask.ApplyFilterCallback, SelectWidgetCallback,
+        SelectEmojiCallback {
 
 
+    private static final int RC_LOCATION = 101;
     // ------------------------------------- C O N S T A N T S  ------------------------------------
     private final Context context = EditorActivity.this;
     public Bitmap originalBitmap;
@@ -65,13 +82,15 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private RelativeLayout rlCanvas;
     private View ivBack, ivClose, tvSave, tvDone;
     private TextView tvToolbarName;
-    private View llStickers, ivAddSticker;
+    private View llStickers, ivAddSticker, ivAddWidgets, ivAddEmoji;
     private View llAdjust, llBrightness, llSaturation, llContrast, llWarmth, llSlider;
     private TextView tvSlider;
     private Slider slider;
     private View loading;
 
     private StickersBottomSheet stickersBottomSheet;
+    private WidgetsBottomSheet widgetsBottomSheet;
+    private EmojisBottomSheet emojisBottomSheet;
 
     // ------------------------------------ R E C Y C L E R V I E W --------------------------------
     private RecyclerView rvFilters;
@@ -88,6 +107,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private AnimationHelper animationHelper = null;
     private Bitmap tempBitmap;
     private FilterType filterType;
+    private FusedLocationProviderClient fusedLocationProviderClient;
     private String media;
     private float brightness = 50;
     private float contrast = 50;
@@ -148,6 +168,8 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         llStickers = findViewById(R.id.ll_stickers);
         ivAddSticker = findViewById(R.id.iv_sticker);
+        ivAddWidgets = findViewById(R.id.iv_widget);
+        ivAddEmoji = findViewById(R.id.iv_emoji);
 
 
         //------------------------------  S E T U P  &   L O A D  ----------------------------------
@@ -167,6 +189,10 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         // set listener for slider value change
         setSliderChangeListener();
+
+
+        // init location provider
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
 
         //------------------------------------ A C T I O N S ---------------------------------------
@@ -242,6 +268,16 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             if (stickersBottomSheet == null)
                 stickersBottomSheet = new StickersBottomSheet(this);
             stickersBottomSheet.show(getSupportFragmentManager(), "stickers");
+        });
+
+        ivAddWidgets.setOnClickListener(v -> {
+            checkLocationPermission();
+        });
+
+        ivAddEmoji.setOnClickListener(v -> {
+            if (emojisBottomSheet == null)
+                emojisBottomSheet = new EmojisBottomSheet(this);
+            emojisBottomSheet.show(getSupportFragmentManager(), "emojis");
         });
 
 
@@ -545,6 +581,10 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         }
     }
 
+
+    /**
+     * When blur result is returned
+     */
     @Override
     public void onBlurCompleted(BitmapResult bitmapResult) {
         hideLoading();
@@ -631,17 +671,141 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     @Override
     public void onStickerSelected(int stickerSrc) {
         try {
+
+            // create bitmap
             Bitmap sticker = CanvasUtils.getBitmapFromVector(context, stickerSrc);
-            StickerView stickerView = new StickerView(context, sticker);
+            StickerView stickerView = new StickerView(context, sticker, myCanvas.screenRect);
+            // create layer and add in layers of canvas
             LayerModel filterLayer = new LayerModel(stickerView);
             myCanvas.addLayer(filterLayer);
 
+            // close the bottom sheet
             if (stickersBottomSheet != null)
                 stickersBottomSheet.dismiss();
 
         } catch (Exception e) {
             Toast.makeText(context, "Exception while creating Bitmap from Vector : " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    /**
+     * When Widget is selected from the bottom sheet
+     */
+    @Override
+    public void onWidgetSelected(WidgetModel widgetModel, Bitmap bitmap) {
+
+        try {
+            // create paint from the widget font
+//        Paint textPaint = new Paint();
+//        textPaint.setColor(Color.WHITE);
+//        textPaint.setAntiAlias(true);
+//        textPaint.setTypeface(ResourcesCompat.getFont(context, widgetModel.getFont()));
+//        textPaint.setTextSize(200);
+//        StickerView stickerView = new StickerView(context, widgetModel.getText(), textPaint,
+//                myCanvas.screenRect);
+//
+//        // create layer and add in layers of canvas
+//        LayerModel filterLayer = new LayerModel(stickerView);
+//        myCanvas.addLayer(filterLayer);
+
+            final StickerView stickerView = new StickerView(context, bitmap, myCanvas.screenRect);
+            // create layer and add in layers of canvas
+            LayerModel filterLayer = new LayerModel(stickerView);
+            myCanvas.addLayer(filterLayer);
+
+            // close the bottom sheet
+            if (widgetsBottomSheet != null)
+                widgetsBottomSheet.dismiss();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(context, "Exception while creating Bitmap from Vector : " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /**
+     * When Emoji is selected from the bottom sheet
+     */
+    @Override
+    public void onEmojiSelected(String emoji, Bitmap bitmap) {
+//        Paint textPaint = new Paint();
+//        textPaint.setColor(Color.WHITE);
+//        textPaint.setAntiAlias(true);
+//        textPaint.setTypeface(ResourcesCompat.getFont(context, R.font.metropolis_regular));
+//        textPaint.setTextSize(100);
+//        StickerView stickerView = new StickerView(context, emoji, textPaint, myCanvas.screenRect,
+//                StickerView.EMOJI);
+
+        final StickerView stickerView = new StickerView(context, bitmap, myCanvas.screenRect);
+        // create layer and add in layers of canvas
+        LayerModel filterLayer = new LayerModel(stickerView);
+        myCanvas.addLayer(filterLayer);
+
+        // close the bottom sheet
+        if (emojisBottomSheet != null)
+            emojisBottomSheet.dismiss();
+    }
+
+
+    private void checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            getDeviceLocation();
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, RC_LOCATION);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == RC_LOCATION) {// If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                getDeviceLocation();
+            } else {
+                openBottomSheet(null, null);
+            }
+        }
+    }
+
+
+    private void getDeviceLocation() {
+        try {
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+
+            Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
+            locationResult.addOnCompleteListener(new OnCompleteListener<Location>() {
+                @Override
+                public void onComplete(@NonNull Task<Location> task) {
+                    if (task.isSuccessful()) {
+                        // Set the map's camera position to the current location of the device.
+                        Location location = task.getResult();
+                        if (location != null) {
+                            final String address = MyUtils.getAddress(context, location.getLatitude(), location.getLongitude());
+                            final String shortAddress = MyUtils.getCityCountry(context, location.getLatitude(), location.getLongitude());
+                            EditorActivity.this.openBottomSheet(address, shortAddress);
+                        } else {
+                            EditorActivity.this.openBottomSheet(null, null);
+                        }
+                    } else {
+                        Toast.makeText(context, "unable to get the location", Toast.LENGTH_SHORT).show();
+                        EditorActivity.this.openBottomSheet(null, null);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            openBottomSheet(null, null);
+            Toast.makeText(context, "Exception while getting device location : " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void openBottomSheet(String location, String shortLocation) {
+        if (widgetsBottomSheet == null)
+            widgetsBottomSheet = new WidgetsBottomSheet(location, shortLocation, this);
+        widgetsBottomSheet.show(getSupportFragmentManager(), "widgets");
     }
 
     @Override

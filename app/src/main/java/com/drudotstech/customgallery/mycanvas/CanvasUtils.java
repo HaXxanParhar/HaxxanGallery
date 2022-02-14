@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -205,7 +206,6 @@ public class CanvasUtils {
         return displayMetrics.heightPixels;
     }
 
-
     public static float toPx(Context context, float dp) {
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.getResources().getDisplayMetrics());
     }
@@ -236,6 +236,14 @@ public class CanvasUtils {
     public static Bitmap getBitmapFromPNG(Context context, int drawableId, float width, float height) {
         final Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), drawableId);
         return getResizedBitmap(bitmap, width, height);
+    }
+
+    public static RectF toRectF(Rect rect) {
+        return new RectF(rect.left, rect.top, rect.right, rect.bottom);
+    }
+
+    public static Rect toRect(RectF rectF) {
+        return new Rect((int) rectF.left, (int) rectF.top, (int) rectF.right, (int) rectF.bottom);
     }
 
 }

@@ -1,15 +1,22 @@
 package com.drudotstech.customgallery.mycanvas.bottom_sheets;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.drudotstech.customgallery.R;
-import com.drudotstech.customgallery.mycanvas.StickerView;
+import com.drudotstech.customgallery.mycanvas.CanvasUtils;
+import com.drudotstech.customgallery.utils.MyUtils;
+
+import java.util.List;
 
 /********** Developed by Drudots Technology **********
  * Created by : usman on 2/8/2022 at 6:31 PM
@@ -19,12 +26,12 @@ import com.drudotstech.customgallery.mycanvas.StickerView;
 public class WidgetsAdapter extends RecyclerView.Adapter<WidgetsAdapter.ViewHolder> {
 
     Context context;
-    int[] array;
-    SelectStickerCallback selectStickerCallback;
+    List<WidgetModel> list;
+    SelectWidgetCallback selectStickerCallback;
 
-    public WidgetsAdapter(Context context, int[] array, SelectStickerCallback selectStickerCallback) {
+    public WidgetsAdapter(Context context, List<WidgetModel> list, SelectWidgetCallback selectStickerCallback) {
         this.context = context;
-        this.array = array;
+        this.list = list;
         this.selectStickerCallback = selectStickerCallback;
     }
 
@@ -36,28 +43,48 @@ public class WidgetsAdapter extends RecyclerView.Adapter<WidgetsAdapter.ViewHold
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        int image = array[position];
-        holder.ivSticker.text = "";
 
-        holder.ivSticker.setOnClickListener(v -> {
-            if (selectStickerCallback != null) {
-                selectStickerCallback.onStickerSelected(image);
+//        MyUtils.setViewSize(context, holder.textView, 3);
+
+        WidgetModel current = list.get(position);
+
+        if (current != null) {
+            if (holder.textView == null) {
+                Toast.makeText(context, "stickerView is null at " + position, Toast.LENGTH_SHORT).show();
+                return;
             }
-        });
+
+            float getTextSize = MyUtils.getTextSize(current.getText());
+            holder.textView.setTextSize(getTextSize);
+
+            holder.textView.setText(current.getText());
+            holder.textView.setTypeface(ResourcesCompat.getFont(context, current.getFont()));
+
+            holder.textView.setOnClickListener(v -> {
+                if (selectStickerCallback != null) {
+                    holder.textView.setDrawingCacheEnabled(true);
+                    holder.textView.buildDrawingCache();
+                    Bitmap bitmap = holder.textView.getDrawingCache();
+                    Bitmap copyBitmap = CanvasUtils.copyBitmap(bitmap);
+                    holder.textView.setDrawingCacheEnabled(false);
+                    selectStickerCallback.onWidgetSelected(current, copyBitmap);
+                }
+            });
+        }
     }
 
     @Override
     public int getItemCount() {
-        return array.length;
+        return list == null ? 0 : list.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
-        StickerView ivSticker;
+        TextView textView;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivSticker = itemView.findViewById(R.id.iv_widget);
+            textView = itemView.findViewById(R.id.iv_widget);
         }
     }
 }

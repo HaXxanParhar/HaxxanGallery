@@ -8,13 +8,24 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.drawable.ColorDrawable;
+import android.location.Address;
+import android.location.Geocoder;
+import android.os.Build;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.DisplayMetrics;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.drudotstech.customgallery.R;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 /********** Developed by Drudots Technology **********
  * Created by : usman on 1/28/2022 at 12:17 PM
@@ -101,4 +112,72 @@ public class MyUtils {
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
         return displayMetrics.widthPixels;
     }
+
+    public static void vibrate(Context context, int milliseconds) {
+        Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(milliseconds, VibrationEffect.DEFAULT_AMPLITUDE));
+        } else {
+            //deprecated in API 26
+            vibrator.vibrate(milliseconds);
+        }
+    }
+
+    public static void setViewSize(Context context, View view, int widthDivision) {
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+        float ratio = 1;
+        final int widthPixels = displayMetrics.widthPixels / widthDivision;
+
+        //ratio = w/h -->  h = w/r
+        final float h = widthPixels / ratio;
+        layoutParams.height = (int) h;
+        view.setLayoutParams(layoutParams);
+    }
+
+    public static float getTextSize(String text) {
+        float minTextSize = 10;
+        float maxTextSize = 60;
+        float ratio = 6;
+        int count = text.length();
+
+        return Math.max(minTextSize, maxTextSize - ((count - 1) * ratio));
+    }
+
+    public static String getAddress(Context context, double latitude, double longitude) {
+
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        List<Address> addresses = new ArrayList<>();
+
+        try {
+            addresses = geocoder.getFromLocation(latitude, longitude, 3);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (!addresses.isEmpty())
+            return addresses.get(0).getAddressLine(0);
+        else
+            return "";
+    }
+
+    public static String getCityCountry(Context context, double latitude, double longitude) {
+
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        List<Address> addresses = new ArrayList<>();
+
+        try {
+            addresses = geocoder.getFromLocation(latitude, longitude, 3);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (!addresses.isEmpty()) {
+            String country = addresses.get(0).getCountryName();
+            String city = addresses.get(0).getLocality();
+            return city + ", " + country;
+        } else
+            return "";
+    }
+
 }

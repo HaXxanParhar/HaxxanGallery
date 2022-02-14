@@ -9,11 +9,13 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.util.AttributeSet;
+import android.os.Build;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextPaint;
 import android.util.Log;
 import android.view.View;
 
-import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 
 import com.drudotstech.customgallery.R;
@@ -23,14 +25,21 @@ import com.drudotstech.customgallery.R;
  ******************************************************/
 
 
-@SuppressLint("ViewConstructor")
+@SuppressLint("ViewConstructor,ObsoleteSdkInt")
 public class StickerView extends View {
 
+    // region --> V A R I A B L E S <
     public static final int BITMAP = 1;
     public static final int TEXT = 2;
+    public static final int EMOJI = 3;
+
+
     private static final float MIN_SCALE = 0.5f; // lesser value = more sensitive
     private static final float MAX_SCALE = 5; // lesser value = more sensitive
     private static final String TAG = "yam";
+    private static final int MIN_TEXT_SIZE = 10; // minimum text size for text and emojis
+    private static final int MAX_EMOJI_SIZE = 400; // max text size for emojis
+    private static final int DEFAULT_TEXT_SIZE = 200; // the base text size for Text and emojis
     public int stickerType; // bitmap or text
     public String text = "5:34 PM";
 
@@ -38,8 +47,8 @@ public class StickerView extends View {
     public RectF rect;
     public Context context;
     public Bitmap bitmap;
-    public int screenWidth;
-    public int screenHeight;
+    public float screenWidth;
+    public float screenHeight;
     public float centerX, centerY;
     public boolean isScaled;// if scaling is required
     public boolean isTranslated;// if translation is required
@@ -47,72 +56,110 @@ public class StickerView extends View {
 
     public RectF canvasRect;
 
+    public TextPaint staticLayoutPaint;
     public Paint textPaint;
     public Paint secondaryTextPaint;
     public Paint borderPaint;
     public Paint redPaint;
+    public Paint bluePaint;
     public int margin = 2;
 
     public Rect textRect;
     public RectF borderRect;
     public RectF startingRectF; // to save the init rectf before making changes to bitmap
+    public StaticLayout staticLayout; // static layout for multiline text
 
     public boolean isClicked;
     public float scale = 1;
+
     private Matrix matrix;
     private float[] matrixValues = new float[9];
+    // endregion
 
-
-    public StickerView(Context context, @Nullable AttributeSet attrs, Context context1) {
-        super(context, attrs);
-        this.context = context1;
-    }
-
-    public StickerView(Context context, String text) {
+    /**
+     * Pass the Sticker Text and canvas rect
+     */
+    public StickerView(Context context, String text, Paint paint, RectF canvasRect) {
         super(context);
         this.context = context;
-        this.text = text;
         this.stickerType = TEXT;
+        this.canvasRect = canvasRect;
+        this.text = text;
+        this.textPaint = paint;
+
+        // init paints and other items
+        init(context);
+
+        // the Rect for bitmap and text
+        initRects(context);
     }
 
-    public StickerView(Context context, Bitmap bitmap) {
+    /**
+     * Pass the Sticker Text, canvas rect and sticker Type. Type can only be TEXT or EMOJI
+     */
+    public StickerView(Context context, String text, Paint paint, RectF canvasRect, int type) {
         super(context);
         this.context = context;
-        this.bitmap = bitmap;
+
+        // if type is not TEXT nor EMOJI
+        if (type != TEXT && type != EMOJI)
+            this.stickerType = TEXT;
+        else
+            this.stickerType = type;
+
+        this.canvasRect = canvasRect;
+        this.text = text;
+        this.textPaint = paint;
+
+        // init paints and other items
+        init(context);
+
+        // the Rect for bitmap and text
+        initRects(context);
+    }
+
+    /**
+     * Pass the Sticker bitmap and canvas rect
+     */
+    public StickerView(Context context, Bitmap bitmap, RectF canvasRect) {
+        super(context);
+        this.context = context;
         this.stickerType = BITMAP;
+        this.canvasRect = canvasRect;
+        this.bitmap = bitmap;
 
         init(context);
 
-        width = bitmap.getWidth();
-        height = bitmap.getHeight();
-
-        // to make it in center
-        left = (int) (centerX - (width / 2));
-        top = (int) (centerY - (height / 2));
-        right = left + width;
-        bottom = top + height;
-
-        rect = new RectF(left, top, right, bottom);
-        textRect = new Rect(0, 0, 500, 500);
-        updateBorderRect(context);
+        initRects(context);
     }
 
+    /**
+     * Copy Constructor of the StickerView
+     */
     public StickerView(StickerView s) {
         super(s.context);
         this.context = s.context;
         this.bitmap = s.bitmap;
+        this.text = s.text;
+        this.textPaint = s.textPaint;
+        this.secondaryTextPaint = s.secondaryTextPaint;
+        this.textRect = s.textRect;
         this.stickerType = s.stickerType;
+
+        staticLayout = s.staticLayout;
+        staticLayoutPaint = s.staticLayoutPaint;
+        bluePaint = s.bluePaint;
 
         width = s.width;
         height = s.height;
 
-        // to make it in center
         left = s.left;
         top = s.top;
         right = s.right;
         bottom = s.bottom;
 
         rect = s.rect;
+        canvasRect = s.canvasRect;
 
         screenWidth = s.screenWidth;
         screenHeight = s.screenHeight;
@@ -122,14 +169,12 @@ public class StickerView extends View {
         isTranslated = s.isTranslated;// if translation is required
         isRotated = s.isRotated;// if rotation is required
 
-        canvasRect = s.canvasRect;
-
         borderPaint = s.borderPaint;
         redPaint = s.redPaint;
         margin = s.margin;
 
         borderRect = s.borderRect;
-        startingRectF = s.startingRectF; // to save the init rectf before making changes to bitmap
+        startingRectF = s.startingRectF; // to save the starting rectf before making changes to bitmap
 
         isClicked = s.isClicked;
         scale = s.scale;
@@ -137,21 +182,62 @@ public class StickerView extends View {
         matrixValues = s.matrixValues;
     }
 
+    private void initRects(Context context) {
+        if (stickerType == BITMAP) {
+            width = bitmap.getWidth();
+            height = bitmap.getHeight();
 
-    private RectF toRectF(Rect rect) {
-        return new RectF(rect.left, rect.top, rect.right, rect.bottom);
+            // to make it in center
+            left = (int) (centerX - (width / 2));
+            top = (int) (centerY - (height / 2));
+            right = left + width;
+            bottom = top + height;
+            rect = new RectF(left, top, right, bottom);
+            borderRect = new RectF(rect.left, rect.top, rect.right, rect.bottom);
+        } else if (stickerType == TEXT || stickerType == EMOJI) {
+            textRect = new Rect();
+            textPaint.getTextBounds(text, 0, text.length(), textRect);
+
+            final float halfWidth = textRect.width() / 2.0f;
+            final float halfHeight = textRect.height() / 2.0f;
+
+            rect = new RectF();
+            rect.left = centerX - halfWidth;
+            rect.right = centerX + halfWidth;
+            rect.top = centerY - halfHeight;
+            rect.bottom = centerY + halfHeight;
+
+            borderRect = new RectF();
+            borderRect.left = centerX - halfWidth;
+            borderRect.right = centerX + halfWidth;
+            borderRect.top = centerY - halfHeight;
+            borderRect.bottom = centerY + halfHeight;
+
+            secondaryTextPaint = new Paint();
+            secondaryTextPaint.setColor(Color.WHITE);
+            secondaryTextPaint.setTypeface(ResourcesCompat.getFont(context, R.font.metropolis_bold));
+            secondaryTextPaint.setTextSize(50);
+
+            buildStaticLayout();
+        }
     }
 
-    public void updateBorderRect(Context context) {
-        int marginPx = (int) CanvasUtils.toPx(context, margin);
-//        borderRect = new RectF(rect.left - marginPx, rect.top - marginPx, rect.right + marginPx, rect.bottom + marginPx);
-        borderRect = new RectF(rect.left, rect.top, rect.right, rect.bottom);
+    private void buildStaticLayout() {
+        staticLayoutPaint = new TextPaint(textPaint);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            staticLayout = StaticLayout.Builder.obtain(text, 0, text.length(),
+                    staticLayoutPaint, (int) canvasRect.width())
+                    .build();
+        } else {
+            staticLayout = new StaticLayout(text, 0, text.length(), staticLayoutPaint,
+                    (int) canvasRect.width(), Layout.Alignment.ALIGN_CENTER, 1.0f,
+                    0, false);
+        }
     }
-
 
     private void init(Context context) {
-        screenWidth = CanvasUtils.getScreenWidth(context);
-        screenHeight = CanvasUtils.getScreenHeight(context);
+        screenWidth = canvasRect.width();
+        screenHeight = canvasRect.height();
         centerX = (float) (screenWidth / 2.0);
         centerY = (float) (screenHeight / 2.0);
 
@@ -167,16 +253,11 @@ public class StickerView extends View {
         redPaint.setAntiAlias(true);
         redPaint.setStrokeWidth(CanvasUtils.toPx(context, 3f));
 
-        textPaint = new Paint();
-        textPaint.setColor(Color.WHITE);
-        textPaint.setAntiAlias(true);
-        textPaint.setTypeface(ResourcesCompat.getFont(context, R.font.time_font));
-        textPaint.setTextSize(200);
-
-        secondaryTextPaint = new Paint();
-        secondaryTextPaint.setColor(Color.WHITE);
-        secondaryTextPaint.setTypeface(ResourcesCompat.getFont(context, R.font.metropolis_bold));
-        secondaryTextPaint.setTextSize(50);
+        bluePaint = new Paint();
+        bluePaint.setStyle(Paint.Style.STROKE);
+        bluePaint.setColor(Color.BLUE);
+        bluePaint.setAntiAlias(true);
+        bluePaint.setStrokeWidth(CanvasUtils.toPx(context, 2f));
 
         setRotation(0);
 
@@ -192,107 +273,116 @@ public class StickerView extends View {
         isClicked = clicked;
     }
 
-
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-//        canvas.save();
-//        canvas.clipRect(canvasRect); // to clip the main bitmap area
-
         Log.d(TAG, "------------------------------- on Draw --------------------------------------");
         Log.d(TAG, "Left : " + rect.left + "  |  Top : " + rect.top + "  |  Right : " + rect.right + "  |  Bottom : " + rect.bottom);
-        matrix.setTranslate(rect.left, rect.top);
 
-        matrix.postRotate(getRotation(), rect.centerX(), rect.centerY());
+        //------------------------------------- T E X T --------------------------------------------
+        if (stickerType == TEXT || stickerType == EMOJI) {
 
-        matrix.postScale(scale, scale, rect.centerX(), rect.centerY());
+            // scaling
+            float newFontSize = DEFAULT_TEXT_SIZE * scale;
 
-//        if (textPaint != null && !TextUtils.isEmpty(text))
-        textPaint.setTextSize(200 * scale);
-        textPaint.getTextBounds(text, 0, text.length(), textRect);
-//        secondaryTextPaint.setTextSize(50 * scale);
-        canvas.drawText(text, textRect.centerX(), textRect.centerY(), textPaint);
-//        canvas.drawText("PM", rect.left + rect.width(), rect.top, secondaryTextPaint);
-//        canvas.drawBitmap(bitmap, matrix, null);
+            if (stickerType == EMOJI) // for emojis max size is 256 px
+                newFontSize = Math.min(MAX_EMOJI_SIZE, newFontSize);
 
+            textPaint.setTextSize(Math.max(MIN_TEXT_SIZE, newFontSize));
 
-//        canvas.restore();
+            // update the staticLayout
+            buildStaticLayout();
 
+            // getting the rect after scaling
+            staticLayoutPaint.getTextBounds(text, 0, text.length(), textRect);
 
-//        else {
-//            canvas.drawBitmap(bitmap, null, rect, null);
-//        }
+            final float centerX = rect.centerX();
+            final float centerY = rect.centerY();
+            final int w = textRect.width() / 2;
+            final int h = textRect.height() / 2;
+            borderRect.left = centerX - w;
+            borderRect.right = centerX + w;
+            borderRect.top = centerY - h;
+            borderRect.bottom = centerY + h;
 
-        if (startingRectF != null) {
-            matrix.getValues(matrixValues);
+            if (stickerType == TEXT && staticLayout != null) {
+                staticLayout.draw(canvas);
+            } else {
+                // y is the baseline
+                canvas.drawText(text, borderRect.left, borderRect.bottom, textPaint);
+            }
 
-            //------------------- Scaling --------------------------------
-            float scaledX = matrixValues[Matrix.MSCALE_X];
-            float scaledY = matrixValues[Matrix.MSCALE_Y];
-            scaledX = getBoundedScale(scaledX);
-            scaledY = getBoundedScale(scaledY);
-
-            Log.d("haxx", "Befor --> Scale X : " + scaledX + "  Scale Y : " + scaledY);
-
-            scaledX = ((startingRectF.width() * scaledX) - startingRectF.width()) / 2.0f;
-            scaledY = ((startingRectF.height() * scaledY) - startingRectF.height()) / 2.0f;
-
-            Log.d("haxx", "After --> Scale X : " + scaledX + "  Scale Y : " + scaledY);
-
-            borderRect.left = startingRectF.left - scaledX;
-            borderRect.top = startingRectF.top - scaledY;
-            borderRect.right = startingRectF.right + scaledX;
-            borderRect.bottom = startingRectF.bottom + scaledY;
-            Log.d(TAG, "---------- Scaled with X : " + scaledX + " and Y  " + scaledY + "  of   " + scale + "  ---------");
-            Log.d(TAG, "Left : " + borderRect.left + "  |  Top : " + borderRect.top
-                    + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
-
-            //------------------- Translating --------------------------------
-//            if (isTranslated) {
-            float translatedX = matrixValues[Matrix.MTRANS_X];
-            float translatedY = matrixValues[Matrix.MTRANS_Y];
-            Log.d("haxx", "--> Translated X : " + translatedX + "  Translated Y : " + translatedY);
-
-            borderRect.right = translatedX + borderRect.width();
-            borderRect.bottom = translatedY + borderRect.height();
-            borderRect.left = translatedX;
-            borderRect.top = translatedY;
-            Log.d(TAG, "---------- Translated by X : " + translatedX + " and Y  " + translatedY + "---------");
-            Log.d(TAG, "Left : " + borderRect.left + "  |  Top : " + borderRect.top
-                    + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
-
-            Log.d("haxx", "Befor Rect  --> Left : " + borderRect.left + "  |  Top : "
-                    + borderRect.top + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
-//                isTranslated = false;
-//            }
-//            rect.left = startingRectF.left / scale;
-//            rect.top = startingRectF.top / scale;
-//            rect.right = startingRectF.right * scale;
-//            rect.bottom = startingRectF.bottom * scale;
-
-//            int scaledX = (int) ((startingRectF.width() * scale) - startingRectF.width());
-//            int scaledY = (int) ((startingRectF.height() * scale) - startingRectF.height());
-//
-//            rect.left = startingRectF.left - scaledX;
-//            rect.top = startingRectF.top - scaledY;
-//            rect.right = startingRectF.right + scaledX;
-//            rect.bottom = startingRectF.bottom + scaledY;
+//            canvas.restore();
         }
 
+        //------------------------------------- B I T M A P --------------------------------------------
+
+        else if (stickerType == BITMAP) {
+
+            matrix.setTranslate(rect.left, rect.top);
+//            matrix.postRotate(getRotation(), rect.centerX(), rect.centerY());
+            matrix.postScale(scale, scale, rect.centerX(), rect.centerY());
+            canvas.drawBitmap(bitmap, matrix, null);
+
+            // update the border Rect based on the Rotation & Scale
+            if (startingRectF != null) {
+                matrix.getValues(matrixValues);
+
+                //------------------- Scaling --------------------------------
+                float scaledX = matrixValues[Matrix.MSCALE_X];
+                float scaledY = matrixValues[Matrix.MSCALE_Y];
+                scaledX = getBoundedScale(scaledX);
+                scaledY = getBoundedScale(scaledY);
+
+                Log.d("haxx", "Befor --> Scale X : " + scaledX + "  Scale Y : " + scaledY);
+
+                scaledX = ((startingRectF.width() * scaledX) - startingRectF.width()) / 2.0f;
+                scaledY = ((startingRectF.height() * scaledY) - startingRectF.height()) / 2.0f;
+
+                Log.d("haxx", "After --> Scale X : " + scaledX + "  Scale Y : " + scaledY);
+
+                borderRect.left = startingRectF.left - scaledX;
+                borderRect.top = startingRectF.top - scaledY;
+                borderRect.right = startingRectF.right + scaledX;
+                borderRect.bottom = startingRectF.bottom + scaledY;
+                Log.d(TAG, "---------- Scaled with X : " + scaledX + " and Y  " + scaledY + "  of   " + scale + "  ---------");
+                Log.d(TAG, "Left : " + borderRect.left + "  |  Top : " + borderRect.top
+                        + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
+
+
+                //------------------- Translating --------------------------------
+                float translatedX = matrixValues[Matrix.MTRANS_X];
+                float translatedY = matrixValues[Matrix.MTRANS_Y];
+                Log.d("haxx", "--> Translated X : " + translatedX + "  Translated Y : " + translatedY);
+
+                borderRect.right = translatedX + borderRect.width();
+                borderRect.bottom = translatedY + borderRect.height();
+                borderRect.left = translatedX;
+                borderRect.top = translatedY;
+                Log.d(TAG, "---------- Translated by X : " + translatedX + " and Y  " + translatedY + "---------");
+                Log.d(TAG, "Left : " + borderRect.left + "  |  Top : " + borderRect.top
+                        + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
+
+                Log.d("haxx", "Befor Rect  --> Left : " + borderRect.left + "  |  Top : "
+                        + borderRect.top + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
+            }
+        }
+
+
         if (isClicked) {
-            canvas.drawRect(borderRect.left, borderRect.top, borderRect.right, borderRect.bottom, redPaint);
+            canvas.drawRect(borderRect, redPaint);
+//            canvas.drawRect(rect, bluePaint);
             Log.d(TAG, "---------- TEST_BORDER ---------");
             Log.d(TAG, "TEST_BORDER draw : Left : " + borderRect.left + "  |  Top : " + borderRect.top + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
         } else {
-            if (textRect != null)
-                canvas.drawRect(textRect, borderPaint);
-            canvas.drawRect(borderRect.left, borderRect.top, borderRect.right, borderRect.bottom, borderPaint);
+            canvas.drawRect(borderRect, bluePaint);
+//            canvas.drawRect(rect, bluePaint);
+//            canvas.drawRect(borderRect.left, borderRect.top, borderRect.right, borderRect.bottom, borderPaint);
+//            canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, borderPaint);
         }
-    }
 
-    private Rect toRect(RectF rectF) {
-        return new Rect((int) rectF.left, (int) rectF.top, (int) rectF.right, (int) rectF.bottom);
+//        canvas.drawCircle(centerX, centerY, 3f, bluePaint);
     }
 
     public void updateStartingRect() {

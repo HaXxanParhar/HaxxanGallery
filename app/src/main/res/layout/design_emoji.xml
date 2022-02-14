@@ -2,20 +2,16 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/app_background"
     android:padding="@dimen/_4sdp">
 
     <TextView
         android:id="@+id/iv_widget"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/bubble_love"
+        android:layout_height="match_parent"
         android:gravity="center"
-        android:inputType="textMultiLine"
-        android:paddingVertical="@dimen/_12sdp"
-        android:text="Whats up"
+        android:text="😀"
         android:textColor="@color/white"
-        android:textSize="@dimen/_18sdp"
+        android:textSize="@dimen/_60sdp"
         android:visibility="visible" />
 
 </RelativeLayout>

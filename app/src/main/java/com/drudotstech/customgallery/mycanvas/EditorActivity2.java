@@ -604,7 +604,7 @@ public class EditorActivity2 extends BaseActivity implements FilterAdapter.Filte
     public void onStickerSelected(int stickerSrc) {
         try {
             Bitmap sticker = CanvasUtils.getBitmapFromVector(context, stickerSrc);
-            StickerView stickerView = new StickerView(context, sticker);
+            StickerView stickerView = new StickerView(context, sticker,myCanvas.screenRect);
             LayerModel filterLayer = new LayerModel( stickerView);
             myCanvas.addLayer(filterLayer);
 

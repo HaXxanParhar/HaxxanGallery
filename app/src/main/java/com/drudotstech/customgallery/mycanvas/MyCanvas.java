@@ -8,7 +8,6 @@ import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.PointF;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -18,6 +17,7 @@ import android.widget.Toast;
 
 import com.drudotstech.customgallery.R;
 import com.drudotstech.customgallery.editor.photoeditor.ImageFilterView;
+import com.drudotstech.customgallery.utils.MyUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +29,8 @@ import java.util.List;
 
 public class MyCanvas extends View {
 
-    // region --> V A R I A B L E S <--
+    // region --> V A R I A B L E S <
+
     private static final String TAG = "Haxx";
     private static final int INVALID_VALUE = -1;
     private static final int SCALING_SENSITIVITY = 60; // lesser value = more sensitive
@@ -37,6 +38,9 @@ public class MyCanvas extends View {
     private static final float MAX_SCALE = 5; // lesser value = more sensitive
     private final int CLICK_DELAY = 300;// the delay (ms) between action down and up that will count as click
     private final Context context;
+    public RectF screenRect; // rect of the canvas
+    List<Float> listX = new ArrayList<>();
+    List<Float> listY = new ArrayList<>();
     private ImageFilterView imageFilterView;
     private boolean isSelectionEnabled = false;
 
@@ -56,7 +60,6 @@ public class MyCanvas extends View {
     // to scale the delete icon as sticker comes closer i.e. more closer sticker, more distance ratio
     private float distanceRatio = 1;
 
-    private Rect screenRect; // rect of the canvas
     private Paint bitmapPaint; // anti alise paint for bitmaps
 
     private RectF mainRect; // the rect of the main bitmap
@@ -74,18 +77,22 @@ public class MyCanvas extends View {
     private float angle; // angle of rotation
     private float startingScale = INVALID_VALUE; // to store starting scale before applying new scale
     private float startingRotation = INVALID_VALUE; // to store starting angle before applying new rotation
+    private Paint greenPaint;
     // endregion
 
     public MyCanvas(Context context) {
         super(context);
         this.context = context;
-        int screenWidth = CanvasUtils.getScreenWidth(context);
-        int screenHeight = CanvasUtils.getScreenHeight(context);
 
         deletePaint = new Paint();
         deletePaint.setStyle(Paint.Style.STROKE);
         deletePaint.setColor(Color.BLUE);
-        deletePaint.setStrokeWidth(CanvasUtils.toPx(context, 2f));
+        deletePaint.setStrokeWidth(CanvasUtils.toPx(context, 1f));
+
+        greenPaint = new Paint();
+        greenPaint.setStyle(Paint.Style.STROKE);
+        greenPaint.setColor(Color.GREEN);
+        greenPaint.setStrokeWidth(CanvasUtils.toPx(context, 2f));
 
         bitmapPaint = new Paint();
         bitmapPaint.setAntiAlias(true);
@@ -93,15 +100,17 @@ public class MyCanvas extends View {
 
     public void init() {
         final ViewGroup.LayoutParams layoutParams = getLayoutParams();
-        screenRect = new Rect(0, 0, layoutParams.width, layoutParams.height);
+        final int width = layoutParams.width;
+        final int height = layoutParams.height;
+        screenRect = new RectF(0, 0, width, height);
 
         // create a rect for delete area
-        float heightOffset = layoutParams.height * 0.10f; // to get the 10% of the height
-        float widthOffset = layoutParams.width * 0.25f; // to get the 25% of the width
-        float left = (layoutParams.width / 2.0f) - (widthOffset / 2.0f);
-        float right = (layoutParams.width / 2.0f) + (widthOffset / 2.0f);
-        float top = layoutParams.height - heightOffset;
-        float bottom = layoutParams.height;
+        float heightOffset = height * 0.10f; // to get the 10% of the height
+        float widthOffset = width * 0.25f; // to get the 25% of the width
+        float left = (width / 2.0f) - (widthOffset / 2.0f);
+        float right = (width / 2.0f) + (widthOffset / 2.0f);
+        float top = height - heightOffset;
+        float bottom = height;
         final int bottomMargin = 40;
         deleteRect = new RectF(left, top - bottomMargin, right, bottom - bottomMargin);
 
@@ -117,7 +126,6 @@ public class MyCanvas extends View {
 
         deleteCenterPoint = new PointF(deleteIconRect.centerX(), deleteIconRect.centerY());
     }
-
 
     //region --> G E T T E R S   &   S E T T E R S <--
 
@@ -142,7 +150,7 @@ public class MyCanvas extends View {
 
             case LayerModel.PAINT:
             case LayerModel.STICKER:
-                layer.sticker.canvasRect = mainRect;
+                layer.sticker.canvasRect = mainRect;//todo: verify if we need this line or not
                 layers.add(layer);
                 break;
         }
@@ -200,6 +208,7 @@ public class MyCanvas extends View {
         if (backgroundBitmap != null)
             canvas.drawBitmap(backgroundBitmap, null, screenRect, bitmapPaint);
 
+
         // draw rest of the layers
         if (layers != null && !layers.isEmpty()) {
             LayerModel firstLayer = layers.get(0);
@@ -209,10 +218,12 @@ public class MyCanvas extends View {
 
                     case LayerModel.FILTER:
                         canvas.drawBitmap(layer.mainBitmap, null, layer.mainRect, bitmapPaint);
+//                        canvas.drawLine(0, screenRect.centerY(), screenRect.width(), screenRect.centerY(), deletePaint);
+//                        canvas.drawLine(screenRect.centerX(), 0, screenRect.centerX(), screenRect.height(), deletePaint);
 
                         if (deleteBitmap != null && showDeleteArea) {
                             canvas.drawBitmap(deleteBitmap, null, deleteIconRect, null);
-                            canvas.drawRect(deleteRect, deletePaint);
+//                            canvas.drawRect(deleteRect, deletePaint);
                         }
                         break;
 
@@ -238,6 +249,12 @@ public class MyCanvas extends View {
             }
         }
 //        canvas.drawCircle(centerX, centerY, CanvasUtils.toPx(context, 50f), paint);
+
+
+//        for (int i = 0; i < listX.size(); i++) {
+//            canvas.drawPoint(listX.get(i), listY.get(i), greenPaint);
+//        }
+
     }
 
     @Override
@@ -354,6 +371,8 @@ public class MyCanvas extends View {
 
                     case MotionEvent.ACTION_UP:
 
+                        listX.clear();
+                        listY.clear();
                         // reset the first touch pointer
                         pointerId1 = INVALID_VALUE;
                         startingRotation = INVALID_VALUE;
@@ -371,7 +390,13 @@ public class MyCanvas extends View {
                             // delete the layer
                             if (distance <= (deleteIconSize * 2)) {
                                 deleteLayer(selectedLayerIndex);
-                                showDeleteArea = false;
+                                selectedLayer = null;
+                                selectedLayerIndex = INVALID_VALUE;
+
+                                invalidate();
+
+                                // vibrate
+                                MyUtils.vibrate(context, 100);
 
                                 // reset the icon size to normal
                                 float halfSize = deleteIconSize / 2;
@@ -381,11 +406,7 @@ public class MyCanvas extends View {
                                         (deleteRect.centerX() + halfSize),
                                         (deleteRect.centerY() + halfSize));
                             }
-
-                            // reset the values
-                            selectedLayer.sticker.isScaled = false;
-                            selectedLayer.sticker.isTranslated = false;
-
+                            showDeleteArea = false;
                         }
 
                         int index = findSelectedViewIndex(rawX, rawY);
@@ -402,6 +423,8 @@ public class MyCanvas extends View {
                         break;
 
                     case MotionEvent.ACTION_MOVE:
+                        listX.add(rawX);
+                        listY.add(rawY);
                         // only perform actions if view is clicked/selected
                         if (selectedLayer != null && selectedLayer.sticker.isClicked()) {
 
@@ -462,7 +485,6 @@ public class MyCanvas extends View {
                                 // scaling the image
                                 float distance = distanceBetweenLines(secondPoint, firstPoint, newSecondPoint, newFirstPoint);
 
-
                                 // set the bitmap original scale as starting scale
                                 if (startingScale == INVALID_VALUE) {
                                     startingScale = selectedLayer.sticker.scale;
@@ -471,6 +493,7 @@ public class MyCanvas extends View {
                                     float scale = distance / SCALING_SENSITIVITY;
                                     Log.d(TAG, " Scale :  " + scale + " ------- Distance : --> " + distance);
                                     scale = startingScale + scale; // add new scale in starting scale
+
                                     // set the new scale with within min & max limits
                                     scale = getBoundedScale(scale);
                                     selectedLayer.sticker.scale = scale;
@@ -486,40 +509,8 @@ public class MyCanvas extends View {
                             float distance = getDistanceBetweenPoints(deleteCenterPoint, stickerCenterPoint);
 
                             // show/hide the delete area
-                            float halfSize = deleteIconSize / 2;
                             if (distance <= showDeleteAreaDistance) {
                                 showDeleteArea = true;
-
-//                                if (distance < animationStartDist) {
-//                                    Log.d("ICON", "- - - - - - - - - - " + distance + " - - - - - - - - - - - -");
-//                                    float rate = (animationStartDist - animationEndDist) /
-//                                            (animationMinScale - animationMaxScale);
-//                                    Log.d("ICON", "Rate   : " + rate);
-//
-//                                    float diff = animationStartDist + distance;
-//                                    Log.d("ICON", "Diff   : " + diff);
-//
-//                                    float addedRatio = diff / rate;
-//                                    Log.d("ICON", "added  : " + addedRatio);
-//                                    distanceRatio = animationMinScale + addedRatio;
-//                                    Log.d("ICON", "Ratio : " + distanceRatio);
-//
-////                                    float deleteThreshold = deleteIconSize * 2;
-////                                    Log.d("ICON", "ratio : " + distance + " / " + deleteThreshold);
-////                                    distanceRatio = distance / deleteThreshold;
-////                                    distanceRatio = Math.min(2f, Math.max(1f, distanceRatio));
-////                                    Log.d("ICON", "distance Ratio : " + distanceRatio);
-////                                    distanceRatio = 3.0f - distanceRatio;
-////                                    Log.d("ICON", "final distance : " + distanceRatio);
-//
-//                                    // scale by the distance ratio
-//                                    deleteIconRect = new RectF(
-//                                            (deleteRect.centerX() - halfSize * distanceRatio),
-//                                            (deleteRect.centerY() - halfSize * distanceRatio),
-//                                            (deleteRect.centerX() + halfSize * distanceRatio),
-//                                            (deleteRect.centerY() + halfSize * distanceRatio));
-//                                }
-
 
                             } else {
                                 showDeleteArea = false;
@@ -533,10 +524,13 @@ public class MyCanvas extends View {
 
                     case MotionEvent.ACTION_CANCEL:
                         // reset values
+                        listX.clear();
+                        listY.clear();
                         pointerId1 = INVALID_VALUE;
                         pointerId2 = INVALID_VALUE;
                         startingRotation = INVALID_VALUE;
                         startingScale = INVALID_VALUE;
+                        showDeleteArea = false;
                         if (selectedLayer != null) {
                             selectedLayer.sticker.isScaled = false;
                             selectedLayer.sticker.isTranslated = false;
@@ -651,7 +645,6 @@ public class MyCanvas extends View {
     }
 
     // endregion
-
 
     // region  --> E F F E C T S <--
 

@@ -8,7 +8,9 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#66292828" />
+        android:background="#66292828"
+        android:clickable="true"
+        android:focusable="true" />
 
     <com.wang.avi.AVLoadingIndicatorView
         android:layout_width="@dimen/_40sdp"
