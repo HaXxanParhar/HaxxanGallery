@@ -8,6 +8,13 @@ package com.drudotstech.customgallery.mycanvas.bottom_sheets;
 public class WidgetModel {
     String text;
     int font;
+    boolean isSelected;
+
+    public WidgetModel(String text, int font, boolean isSelected) {
+        this.text = text;
+        this.font = font;
+        this.isSelected = isSelected;
+    }
 
     public WidgetModel(String text, int font) {
         this.text = text;
@@ -28,5 +35,13 @@ public class WidgetModel {
 
     public void setFont(int font) {
         this.font = font;
+    }
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
     }
 }

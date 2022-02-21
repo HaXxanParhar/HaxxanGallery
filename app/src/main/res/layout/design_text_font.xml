@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><!-- *********** Developed by Drudots Technology ************ -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/_72sdp"
+    android:layout_marginEnd="@dimen/_8sdp"
+    android:layout_height="@dimen/_48sdp">
+
+    <TextView
+        android:id="@+id/tv_font"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_black_rounded"
+        android:fontFamily="@font/bubble_love"
+        android:gravity="center"
+        android:text="Text"
+        android:textColor="@color/white" />
+
+
+</RelativeLayout>

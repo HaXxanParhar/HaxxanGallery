@@ -32,14 +32,13 @@ public class StickerView extends View {
     public static final int BITMAP = 1;
     public static final int TEXT = 2;
     public static final int EMOJI = 3;
+    public static final int EDITABLE_TEXT = 4;
 
-
-    private static final float MIN_SCALE = 0.5f; // lesser value = more sensitive
-    private static final float MAX_SCALE = 5; // lesser value = more sensitive
     private static final String TAG = "yam";
     private static final int MIN_TEXT_SIZE = 10; // minimum text size for text and emojis
     private static final int MAX_EMOJI_SIZE = 400; // max text size for emojis
-    private static final int DEFAULT_TEXT_SIZE = 200; // the base text size for Text and emojis
+    private static final int TEXT_MARGIN = 40; // the margin from screen for text,emoji
+
     public int stickerType; // bitmap or text
     public String text = "5:34 PM";
 
@@ -49,6 +48,8 @@ public class StickerView extends View {
     public Bitmap bitmap;
     public float screenWidth;
     public float screenHeight;
+    public float marginedScreenWidth;
+    public float marginedScreenHeight;
     public float centerX, centerY;
     public boolean isScaled;// if scaling is required
     public boolean isTranslated;// if translation is required
@@ -63,13 +64,14 @@ public class StickerView extends View {
     public Paint redPaint;
     public Paint bluePaint;
     public int margin = 2;
+    public int defaultTextSize = 200; // the base text size for Text and emojis
 
     public Rect textRect;
     public RectF borderRect;
     public RectF startingRectF; // to save the init rectf before making changes to bitmap
     public StaticLayout staticLayout; // static layout for multiline text
 
-    public boolean isClicked;
+    public boolean isSelected;
     public float scale = 1;
 
     private Matrix matrix;
@@ -102,7 +104,32 @@ public class StickerView extends View {
         this.context = context;
 
         // if type is not TEXT nor EMOJI
-        if (type != TEXT && type != EMOJI)
+        if (type != TEXT && type != EMOJI && type != EDITABLE_TEXT)
+            this.stickerType = TEXT;
+        else
+            this.stickerType = type;
+
+        this.canvasRect = canvasRect;
+        this.text = text;
+        this.textPaint = paint;
+
+        // init paints and other items
+        init(context);
+
+        // the Rect for bitmap and text
+        initRects(context);
+    }
+
+    /**
+     * Pass the Sticker Text, default textSize, canvas rect and sticker Type. Type can only be TEXT or EMOJI or EDITABLE_TEXT
+     */
+    public StickerView(Context context, String text, Paint paint, RectF canvasRect, int type, int defaultTextSize) {
+        super(context);
+        this.context = context;
+        this.defaultTextSize = defaultTextSize;
+
+        // if type is not TEXT nor EMOJI
+        if (type != TEXT && type != EMOJI && type != EDITABLE_TEXT)
             this.stickerType = TEXT;
         else
             this.stickerType = type;
@@ -163,6 +190,12 @@ public class StickerView extends View {
 
         screenWidth = s.screenWidth;
         screenHeight = s.screenHeight;
+
+        marginedScreenWidth = s.marginedScreenWidth;
+        marginedScreenHeight = s.marginedScreenHeight;
+
+        defaultTextSize = s.defaultTextSize;
+
         centerX = s.centerX;
         centerY = s.centerY;
         isScaled = s.isScaled;// if scaling is required
@@ -176,7 +209,7 @@ public class StickerView extends View {
         borderRect = s.borderRect;
         startingRectF = s.startingRectF; // to save the starting rectf before making changes to bitmap
 
-        isClicked = s.isClicked;
+        isSelected = s.isSelected;
         scale = s.scale;
         matrix = s.matrix;
         matrixValues = s.matrixValues;
@@ -194,7 +227,7 @@ public class StickerView extends View {
             bottom = top + height;
             rect = new RectF(left, top, right, bottom);
             borderRect = new RectF(rect.left, rect.top, rect.right, rect.bottom);
-        } else if (stickerType == TEXT || stickerType == EMOJI) {
+        } else if (stickerType == TEXT || stickerType == EMOJI || stickerType == EDITABLE_TEXT) {
             textRect = new Rect();
             textPaint.getTextBounds(text, 0, text.length(), textRect);
 
@@ -225,12 +258,15 @@ public class StickerView extends View {
     private void buildStaticLayout() {
         staticLayoutPaint = new TextPaint(textPaint);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            staticLayout = StaticLayout.Builder.obtain(text, 0, text.length(),
-                    staticLayoutPaint, (int) canvasRect.width())
+            staticLayout = StaticLayout.Builder
+                    .obtain(text, 0, text.length(), staticLayoutPaint, (int) marginedScreenWidth)
+                    .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                    .setIncludePad(false)
+                    .setLineSpacing(0, 1)
                     .build();
         } else {
             staticLayout = new StaticLayout(text, 0, text.length(), staticLayoutPaint,
-                    (int) canvasRect.width(), Layout.Alignment.ALIGN_CENTER, 1.0f,
+                    (int) marginedScreenWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f,
                     0, false);
         }
     }
@@ -238,6 +274,10 @@ public class StickerView extends View {
     private void init(Context context) {
         screenWidth = canvasRect.width();
         screenHeight = canvasRect.height();
+
+        marginedScreenWidth = screenWidth - TEXT_MARGIN * 2;
+        marginedScreenHeight = screenHeight - TEXT_MARGIN * 2;
+
         centerX = (float) (screenWidth / 2.0);
         centerY = (float) (screenHeight / 2.0);
 
@@ -265,12 +305,12 @@ public class StickerView extends View {
         scale = 1.0f;
     }
 
-    public boolean isClicked() {
-        return isClicked;
+    public boolean isSelected() {
+        return isSelected;
     }
 
-    public void setClicked(boolean clicked) {
-        isClicked = clicked;
+    public void setSelected(boolean selected) {
+        isSelected = selected;
     }
 
     @Override
@@ -281,10 +321,10 @@ public class StickerView extends View {
         Log.d(TAG, "Left : " + rect.left + "  |  Top : " + rect.top + "  |  Right : " + rect.right + "  |  Bottom : " + rect.bottom);
 
         //------------------------------------- T E X T --------------------------------------------
-        if (stickerType == TEXT || stickerType == EMOJI) {
+        if (stickerType == TEXT || stickerType == EMOJI || stickerType == EDITABLE_TEXT) {
 
             // scaling
-            float newFontSize = DEFAULT_TEXT_SIZE * scale;
+            float newFontSize = defaultTextSize * scale;
 
             if (stickerType == EMOJI) // for emojis max size is 256 px
                 newFontSize = Math.min(MAX_EMOJI_SIZE, newFontSize);
@@ -294,26 +334,38 @@ public class StickerView extends View {
             // update the staticLayout
             buildStaticLayout();
 
-            // getting the rect after scaling
+            // getting the rect after scaling for the width of text
             staticLayoutPaint.getTextBounds(text, 0, text.length(), textRect);
 
+            // rect is the translated rect, so make the borderRect with center X,Y of rect
+            // When translated this rect changes, we need to update the borderRect accordingly
+            // because borderRect is used for drawing the sticker (Bitmap, text, emoji)
             final float centerX = rect.centerX();
             final float centerY = rect.centerY();
-            final int w = textRect.width() / 2;
-            final int h = textRect.height() / 2;
+
+            // textRect has the width of the Text from the Paint. Useful if text is not taking the
+            // whole screen width. If that case textRect.width() will exceed the screen width.
+            // So use the screenWidth is that case.
+            int textWidth = (int) Math.min(marginedScreenWidth, textRect.width());
+            final int w = (int) (textWidth / 2.0f);
+
+            // staticlayout has the height of the Text. Useful for multiline text
+            final int h = (int) (staticLayout.getHeight() / 2.0f);
+
             borderRect.left = centerX - w;
             borderRect.right = centerX + w;
             borderRect.top = centerY - h;
             borderRect.bottom = centerY + h;
 
-            if (stickerType == TEXT && staticLayout != null) {
-                staticLayout.draw(canvas);
-            } else {
-                // y is the baseline
-                canvas.drawText(text, borderRect.left, borderRect.bottom, textPaint);
-            }
+            canvas.save();
+            canvas.translate(borderRect.left, borderRect.top);
+            staticLayout.draw(canvas);
+//            else {
+//                // y is the baseline
+//                canvas.drawText(text, borderRect.left, borderRect.bottom, textPaint);
+//            }
+            canvas.restore();
 
-//            canvas.restore();
         }
 
         //------------------------------------- B I T M A P --------------------------------------------
@@ -370,7 +422,7 @@ public class StickerView extends View {
         }
 
 
-        if (isClicked) {
+        if (isSelected) {
             canvas.drawRect(borderRect, redPaint);
 //            canvas.drawRect(rect, bluePaint);
             Log.d(TAG, "---------- TEST_BORDER ---------");
@@ -398,6 +450,6 @@ public class StickerView extends View {
     }
 
     private float getBoundedScale(float scale) {
-        return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+        return MyCanvas.getBoundedScale(scale);
     }
 }

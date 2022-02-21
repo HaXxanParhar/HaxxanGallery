@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".mycanvas.AddTextFragment">
+
+    <ImageView
+        android:id="@+id/iv_blurred_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/image" />
+
+    <RelativeLayout
+        android:id="@+id/second_action_bar"
+        android:layout_width="match_parent"
+        android:layout_height="?actionBarSize"
+        android:background="@drawable/bg_black_transparent_60"
+        android:elevation="@dimen/_2sdp"
+        android:visibility="visible"
+        tools:targetApi="lollipop">
+
+        <ImageView
+            android:id="@+id/iv_close"
+            android:layout_width="@dimen/_40sdp"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="@dimen/_10sdp"
+            android:src="@drawable/ic_baseline_close_24"
+            app:tint="@color/white" />
+
+        <LinearLayout
+            android:id="@+id/ll_done"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:gravity="center"
+            android:paddingHorizontal="@dimen/_16sdp">
+
+            <ImageView
+                android:id="@+id/iv_done"
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"
+                android:layout_marginEnd="@dimen/_4sdp"
+                android:src="@drawable/ic_check_grey" />
+
+            <TextView
+                android:id="@+id/tv_done"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/metropolis_semi_bold"
+                android:gravity="center"
+                android:text="Done"
+                android:textColor="@color/greyer"
+                android:textSize="@dimen/_11ssp" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <EditText
+        android:id="@+id/et_text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/second_action_bar"
+        android:background="@drawable/bg_black_transparent_60"
+        android:fontFamily="@font/metropolis_semi_bold"
+        android:gravity="center"
+        android:hint="Start Typing..."
+        android:textColor="@color/white"
+        android:textColorHint="@color/grey"
+        android:textSize="@dimen/_14ssp" />
+
+
+</RelativeLayout>

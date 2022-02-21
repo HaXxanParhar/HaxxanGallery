@@ -23,12 +23,12 @@ import java.util.List;
 
 public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder> {
 
-    final int padding = 4;
-    Context context;
-    List<FilterModel> list;
-    FilterSelectionCallback callback;
-    ViewHolder previousViewHolder = null;
-    int previousPosition = 0;
+    private final int padding = 4;
+    private final Context context;
+    private final List<FilterModel> list;
+    private final FilterSelectionCallback callback;
+    private ViewHolder previousViewHolder = null;
+    private int previousPosition = 0;
 
     public FilterAdapter(Context context, List<FilterModel> list, FilterSelectionCallback callback) {
         this.context = context;

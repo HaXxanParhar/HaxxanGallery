@@ -18,6 +18,7 @@ import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 
 import com.drudotstech.customgallery.R;
@@ -178,6 +179,11 @@ public class MyUtils {
             return city + ", " + country;
         } else
             return "";
+    }
+
+    public static void hideKeyboard(View view, Context context) {
+        InputMethodManager in = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        in.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
 }

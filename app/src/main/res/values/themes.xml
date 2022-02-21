@@ -7,7 +7,7 @@
         <item name="colorOnPrimary">@color/day_foreground</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/app_background</item>
-        <item name="colorSecondaryVariant">@color/app_background</item>
+        <item name="colorSecondaryVariant">@color/white</item>
         <item name="colorOnSecondary">@color/white</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorOnPrimary</item>
@@ -34,19 +34,29 @@
     </style>
 
     <style name="Cropper.Widget.Drawer.Option.TextView" parent="android:Widget.DeviceDefault.Light.TextView">
-    <item name="android:layout_width">match_parent</item>
-    <item name="android:layout_height">wrap_content</item>
-    <item name="android:padding">@dimen/drawer_text_padding</item>
-    <item name="android:textSize">@dimen/drawer_text_size</item>
-    <item name="android:clickable">true</item>
-    <item name="android:textColor">@android:color/white</item>
-    <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:padding">@dimen/drawer_text_padding</item>
+        <item name="android:textSize">@dimen/drawer_text_size</item>
+        <item name="android:clickable">true</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
     </style>
 
     <!--            Alert Dialog (Popup style)-->
     <style name="PopupAnimation">
         <item name="android:windowEnterAnimation">@anim/zoom_out</item>
         <item name="android:windowExitAnimation">@anim/zoom_in</item>
+    </style>
+
+
+    <!--    Bottom Sheet Dialog-->
+    <style name="BottomSheetTheme" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
+    </style>
+
+    <style name="BottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
     </style>
 
 

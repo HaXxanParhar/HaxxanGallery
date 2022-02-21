@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?><!-- *********** Developed by Drudots Technology ************ -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/_124sdp"
+    android:background="@color/app_background"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:id="@+id/rl_text_tab"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_48sdp"
+        android:paddingHorizontal="@dimen/_8sdp">
+
+        <LinearLayout
+            android:id="@+id/ll_text_fonts"
+            android:layout_width="@dimen/_48sdp"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_47sdp"
+                android:padding="@dimen/_14sdp"
+                android:src="@drawable/ic_text_fonts" />
+
+            <View
+                android:id="@+id/line_1"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_1sdp"
+                android:background="@color/app_color"
+                android:visibility="visible" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_text_color"
+            android:layout_width="@dimen/_48sdp"
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@id/ll_text_fonts"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_47sdp"
+                android:padding="@dimen/_15sdp"
+                android:src="@drawable/ic_color_drop" />
+
+            <View
+                android:id="@+id/line_2"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_1sdp"
+                android:background="@color/app_color"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_text_opacity"
+            android:layout_width="@dimen/_48sdp"
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@id/ll_text_color"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_47sdp"
+                android:padding="@dimen/_15sdp"
+                android:src="@drawable/ic_alpha_drop" />
+
+            <View
+                android:id="@+id/line_3"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_1sdp"
+                android:background="@color/app_color"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/iv_keyboard"
+            android:layout_width="@dimen/_54sdp"
+            android:layout_height="@dimen/_48sdp"
+            android:layout_alignParentEnd="true"
+            android:padding="@dimen/_17sdp"
+            android:src="@drawable/ic_keyboard" />
+
+    </RelativeLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_text_font"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_64sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:paddingStart="@dimen/_8sdp"
+        android:visibility="gone"
+        tools:itemCount="1"
+        tools:listitem="@layout/design_text_font" />
+
+    <LinearLayout
+        android:id="@+id/ll_color_pickers"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_64sdp"
+        android:layout_marginHorizontal="@dimen/_12sdp"
+        android:layout_marginVertical="@dimen/_6sdp"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <com.drudotstech.customgallery.mycanvas.my_color_picker.HuePicker
+            android:id="@+id/hue_picker"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_24sdp"
+            app:position="50" />
+
+        <com.drudotstech.customgallery.mycanvas.my_color_picker.SaturationPicker
+            android:id="@+id/saturation_picker"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_24sdp"
+            android:layout_marginTop="@dimen/_4sdp"
+            app:position="0" />
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_alpha_pickers"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_64sdp"
+        android:layout_marginHorizontal="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <com.drudotstech.customgallery.mycanvas.my_color_picker.AlphaPicker
+            android:id="@+id/alpha_picker"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_24sdp"
+            app:position="50" />
+
+
+    </LinearLayout>
+
+
+</LinearLayout>

@@ -1,10 +1,13 @@
 package com.drudotstech.customgallery.mycanvas.bottom_sheets;
 
+import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -42,7 +45,13 @@ public class WidgetsBottomSheet extends BottomSheetDialogFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+    }
 
+    @NonNull
+    @Override
+    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+        setStyle(STYLE_NO_FRAME, R.style.BottomSheetTheme);
+        return super.onCreateDialog(savedInstanceState);
     }
 
     @Override
@@ -53,7 +62,6 @@ public class WidgetsBottomSheet extends BottomSheetDialogFragment {
         recyclerView = view.findViewById(R.id.rv_stickers);
 
         setRecyclerView();
-
 
         return view;
     }
@@ -74,7 +82,7 @@ public class WidgetsBottomSheet extends BottomSheetDialogFragment {
             list.add(new WidgetModel(location, R.font.metropolis_medium));
 
         // temperature
-        list.add(new WidgetModel("26.0 °C", R.font.metropolis_bold));
+        list.add(new WidgetModel("32.0 °c", R.font.metropolis_bold));
 
         // others
         list.add(new WidgetModel("What's Up?", R.font.cheri));

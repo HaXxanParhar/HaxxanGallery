@@ -5,6 +5,8 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 
+import com.drudotstech.customgallery.mycanvas.models.LayerModel;
+
 /********** Developed by Drudots Technology **********
  * Created by : usman on 2/10/2022 at 11:15 AM
  ******************************************************/

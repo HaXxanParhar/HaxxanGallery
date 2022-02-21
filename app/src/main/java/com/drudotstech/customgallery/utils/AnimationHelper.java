@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /********** Developed by Drudots Technology **********
  * Created by : Usman Hassan on 08/05/2021 at 9:13 AM
@@ -51,7 +52,7 @@ public class AnimationHelper {
         return px / ((float) context.getResources().getDisplayMetrics().densityDpi / DisplayMetrics.DENSITY_DEFAULT);
     }
 
-    public void animateSlideToRight(ArrayList<View> views, int from, int to) {
+    public void animateSlideToRight(List<View> views, int from, int to) {
         int difference = to - from;
         int duration = this.duration;
         switch (difference) {
@@ -88,7 +89,7 @@ public class AnimationHelper {
         }
     }
 
-    public void animateSlideToLeft(ArrayList<View> views, int from, int to) {
+    public void animateSlideToLeft(List<View> views, int from, int to) {
         int difference = from - to;
         int duration = this.duration;
         switch (difference) {
@@ -464,6 +465,7 @@ public class AnimationHelper {
         objectAnimator.start();
     }
 
+    // This method will also hide the view i.e. visibility = GONE
     public void moveToBottom(View view, float heightInDp) {
         heightInDp = convertDpToPixel(heightInDp, view.getContext());
         view.setVisibility(View.VISIBLE);
@@ -471,6 +473,13 @@ public class AnimationHelper {
         objectAnimator.setDuration(duration);
         objectAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
         objectAnimator.start();
+        objectAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                view.setVisibility(View.GONE);
+            }
+        });
     }
 
     public void moveFromBottomToTop(View view, float heightInDp) {

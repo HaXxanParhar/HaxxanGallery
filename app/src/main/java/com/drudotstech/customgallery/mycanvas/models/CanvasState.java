@@ -1,6 +1,8 @@
-package com.drudotstech.customgallery.mycanvas;
+package com.drudotstech.customgallery.mycanvas.models;
 
 import android.graphics.Bitmap;
+
+import com.drudotstech.customgallery.mycanvas.StickerView;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,10 +1,12 @@
-package com.drudotstech.customgallery.mycanvas;
+package com.drudotstech.customgallery.mycanvas.models;
 
 import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.RectF;
 
 import com.drudotstech.customgallery.filters.FilterType;
+import com.drudotstech.customgallery.mycanvas.CanvasUtils;
+import com.drudotstech.customgallery.mycanvas.StickerView;
 
 /********** Developed by Drudots Technology **********
  * Created by : usman on 2/7/2022 at 5:43 PM
@@ -36,10 +38,17 @@ public class LayerModel {
 
     // when type is Sticker
     public StickerView sticker;
+    public TextInfo textInfo;
 
     public LayerModel(StickerView sticker) {
         this.type = STICKER;
         this.sticker = sticker;
+    }
+
+    public LayerModel(StickerView sticker, TextInfo textInfo) {
+        this.type = STICKER;
+        this.sticker = sticker;
+        this.textInfo = textInfo;
     }
 
     public LayerModel(Paint paint) {
@@ -72,10 +81,15 @@ public class LayerModel {
         switch (type) {
             case STICKER:
                 copy = new LayerModel(new StickerView(sticker));
+                copy.textInfo = textInfo;
                 break;
+
             case FILTER:
                 copy = new LayerModel(CanvasUtils.copyBitmap(mainBitmap), mainRect, filterType);
+                if (textInfo != null)
+                    copy.textInfo = textInfo.copy();
                 break;
+
             case PAINT:
                 Paint paint = new Paint();
                 paint.setColorFilter(this.paint.getColorFilter());

@@ -16,7 +16,8 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.drudotstech.customgallery.R;
-import com.drudotstech.customgallery.editor.photoeditor.ImageFilterView;
+import com.drudotstech.customgallery.mycanvas.models.CanvasState;
+import com.drudotstech.customgallery.mycanvas.models.LayerModel;
 import com.drudotstech.customgallery.utils.MyUtils;
 
 import java.util.ArrayList;
@@ -29,45 +30,37 @@ import java.util.List;
 
 public class MyCanvas extends View {
 
-    // region --> V A R I A B L E S <
-
     private static final String TAG = "Haxx";
     private static final int INVALID_VALUE = -1;
-    private static final int SCALING_SENSITIVITY = 60; // lesser value = more sensitive
-    private static final float MIN_SCALE = 0.5f; // lesser value = more sensitive
-    private static final float MAX_SCALE = 5; // lesser value = more sensitive
-    private final int CLICK_DELAY = 300;// the delay (ms) between action down and up that will count as click
+    private static final int SCALING_SENSITIVITY = 100; // lesser value = more sensitive
+    private static final float MIN_SCALE = 0.3f; // min scale factor
+    private static final float MAX_SCALE = 15; // the max scale factor
+    private static final int CLICK_DELAY = 200;// the delay (ms) between action down and up that will count as click
     private final Context context;
+    // region --> V A R I A B L E S <
     public RectF screenRect; // rect of the canvas
-    List<Float> listX = new ArrayList<>();
-    List<Float> listY = new ArrayList<>();
-    private ImageFilterView imageFilterView;
+    private List<Float> listX = new ArrayList<>();
+    private List<Float> listY = new ArrayList<>();
     private boolean isSelectionEnabled = false;
+
 
     private Bitmap deleteBitmap; // delete bitmap
     private float deleteIconSize = 60f; // delete icon size
-    private float animationStartDist = deleteIconSize * 3; // distance from where the scaling of delete will start
-    private float animationEndDist = deleteIconSize * 2; // distance from where the scaling of delete will start
     private float showDeleteAreaDistance = deleteIconSize * 4; // distance from where the deletion area will show
-    private float animationMinScale = 1f; // how much the animation should scale the icon
-    private float animationMaxScale = 2f; // how much the animation should scale the icon
     private RectF deleteRect; // delete area
     private RectF deleteIconRect; // delete icon rect
-    private RectF tempRect; // temp delete icon rect
     private Paint deletePaint; // paint for the delete area
     private PointF deleteCenterPoint;
     private boolean showDeleteArea = false;
-    // to scale the delete icon as sticker comes closer i.e. more closer sticker, more distance ratio
-    private float distanceRatio = 1;
 
     private Paint bitmapPaint; // anti alise paint for bitmaps
-
     private RectF mainRect; // the rect of the main bitmap
     private Bitmap backgroundBitmap; // background i.e. blurred image
     private List<LayerModel> layers = new ArrayList<>(); // layers
     private LayerModel selectedLayer; // object of selected layer
     private int selectedLayerIndex = INVALID_VALUE; // the index of the selected layer from the layers list
     private float dLeft, dTop, dRight, dBottom; // rect differences from the touch x,y. useful for drawing bitmap accurately after touch
+    private long actionDownTime;
 
     // for rotation & scaling
     private PointF secondPoint = new PointF(); // temp point
@@ -78,6 +71,11 @@ public class MyCanvas extends View {
     private float startingScale = INVALID_VALUE; // to store starting scale before applying new scale
     private float startingRotation = INVALID_VALUE; // to store starting angle before applying new rotation
     private Paint greenPaint;
+
+    // Listeners
+    private OnLayerClickListener onLayerClickListener;
+    private OnLayerSelectListener onLayerSelectListener;
+
     // endregion
 
     public MyCanvas(Context context) {
@@ -97,6 +95,12 @@ public class MyCanvas extends View {
         bitmapPaint = new Paint();
         bitmapPaint.setAntiAlias(true);
     }
+
+    public static float getBoundedScale(float scale) {
+        return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+    }
+
+    //region --> G E T T E R S   &   S E T T E R S <--
 
     public void init() {
         final ViewGroup.LayoutParams layoutParams = getLayoutParams();
@@ -127,14 +131,23 @@ public class MyCanvas extends View {
         deleteCenterPoint = new PointF(deleteIconRect.centerX(), deleteIconRect.centerY());
     }
 
-    //region --> G E T T E R S   &   S E T T E R S <--
-
     public void addBackgroundBitmap(Bitmap bitmap) {
         backgroundBitmap = bitmap;
         invalidate();
     }
 
     public void addLayer(LayerModel layer) {
+
+        // first unselect all the sticker layers
+        for (LayerModel layerModel : layers) {
+            if (layerModel.type == LayerModel.STICKER
+                    && layerModel.sticker != null
+                    && layerModel.sticker.isSelected()) {
+                layerModel.sticker.setSelected(false);
+            }
+        }
+
+        // add new layer in the layers
         switch (layer.type) {
             case LayerModel.FILTER:
                 mainRect = layer.mainRect;
@@ -151,6 +164,7 @@ public class MyCanvas extends View {
             case LayerModel.PAINT:
             case LayerModel.STICKER:
                 layer.sticker.canvasRect = mainRect;//todo: verify if we need this line or not
+                layer.sticker.setSelected(true);
                 layers.add(layer);
                 break;
         }
@@ -198,7 +212,15 @@ public class MyCanvas extends View {
         isSelectionEnabled = selectionEnabled;
     }
 
+    public void setOnLayerClickListener(OnLayerClickListener onLayerClickListener) {
+        this.onLayerClickListener = onLayerClickListener;
+    }
+
     // endregion
+
+    public void setOnLayerSelectListener(OnLayerSelectListener onLayerSelectListener) {
+        this.onLayerSelectListener = onLayerSelectListener;
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -257,6 +279,8 @@ public class MyCanvas extends View {
 
     }
 
+    // region --> H E L P E R S   M E T H O D S   F O R    G E S T U R E S <--
+
     @Override
     @SuppressLint("ClickableViewAccessibility")
     public boolean onTouchEvent(MotionEvent event) {
@@ -273,6 +297,9 @@ public class MyCanvas extends View {
                 switch (event.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
                         Log.d("Haxx", "--- TEST_BORDER : " + rawX + " , " + rawY + "   |   " + X + " , " + Y + " ===> " + (rawX - X) + "  ,   " + (rawY - Y) + " ----- ");
+
+                        // note the action down time
+                        actionDownTime = System.currentTimeMillis();
 
                         // first touch pointer
                         pointerId1 = event.getPointerId(event.getActionIndex());
@@ -297,7 +324,11 @@ public class MyCanvas extends View {
                                 selectedLayer = layers.get(layers.size() - 1);
 
                                 // make the touched view -> selected
-                                selectedLayer.sticker.setClicked(true);
+                                selectedLayer.sticker.setSelected(true);
+
+                                // notify the listener
+                                if (onLayerSelectListener != null)
+                                    onLayerSelectListener.onLayerSelected(selectedLayer, layers.size() - 1);
 
                                 // save the starting rect
                                 selectedLayer.sticker.updateStartingRect();
@@ -323,7 +354,7 @@ public class MyCanvas extends View {
 
                                 // first make the previous selected View -> unselected
                                 if (selectedLayerIndex != touchedViewIndex && selectedLayerIndex != -1)
-                                    layers.get(selectedLayerIndex).sticker.setClicked(false);
+                                    layers.get(selectedLayerIndex).sticker.setSelected(false);
 
                                 // move the touched view on top of the layers & update the previous Index
                                 selectedLayerIndex = moveViewToTop(touchedViewIndex);
@@ -332,7 +363,11 @@ public class MyCanvas extends View {
                                 selectedLayer = layers.get(layers.size() - 1);
 
                                 // make the touched view -> selected
-                                selectedLayer.sticker.setClicked(true);
+                                selectedLayer.sticker.setSelected(true);
+
+                                // notify the listener
+                                if (onLayerSelectListener != null)
+                                    onLayerSelectListener.onLayerSelected(selectedLayer, layers.size() - 1);
 
                                 // save the starting rect
                                 selectedLayer.sticker.updateStartingRect();
@@ -347,7 +382,7 @@ public class MyCanvas extends View {
                             // clicked on the empty screen, unselect the selected one
                             else {
                                 if (selectedLayerIndex != INVALID_VALUE) {
-                                    layers.get(selectedLayerIndex).sticker.setClicked(false);
+                                    layers.get(selectedLayerIndex).sticker.setSelected(false);
                                     selectedLayerIndex = INVALID_VALUE;
                                 }
                             }
@@ -373,12 +408,22 @@ public class MyCanvas extends View {
 
                         listX.clear();
                         listY.clear();
+
                         // reset the first touch pointer
                         pointerId1 = INVALID_VALUE;
                         startingRotation = INVALID_VALUE;
                         startingScale = INVALID_VALUE;
 
                         if (selectedLayer != null) {
+
+                            // check if it is a click
+                            long now = System.currentTimeMillis();
+
+                            // it is a click if upTime - downTime is within the Click Delay
+                            if (onLayerClickListener != null && now - actionDownTime <= CLICK_DELAY) {
+                                onLayerClickListener.onLayerClick(selectedLayer);
+                            }
+
 
                             // check if the sticker is within the delete area
                             PointF stickerCenterPoint = new PointF(
@@ -426,7 +471,7 @@ public class MyCanvas extends View {
                         listX.add(rawX);
                         listY.add(rawY);
                         // only perform actions if view is clicked/selected
-                        if (selectedLayer != null && selectedLayer.sticker.isClicked()) {
+                        if (selectedLayer != null && selectedLayer.sticker.isSelected()) {
 
                             // ---------------------------------- Translating ------------------------------
 
@@ -514,7 +559,6 @@ public class MyCanvas extends View {
 
                             } else {
                                 showDeleteArea = false;
-                                distanceRatio = 1;
                             }
 
                             // show the change
@@ -553,8 +597,6 @@ public class MyCanvas extends View {
         }
     }
 
-    // region --> H E L P E R S   M E T H O D S   F O R    G E S T U R E S <--
-
     private int findSelectedViewIndex(float x, float y) {
         int selectedIndex = INVALID_VALUE;
 
@@ -583,10 +625,6 @@ public class MyCanvas extends View {
     private boolean isInsideRect(float x, float y, RectF rect) {
         Log.d(TAG, "TEST_BORDER chek : Left : " + rect.left + "  |  Top : " + rect.top + "  |  Right : " + rect.right + "  |  Bottom : " + rect.bottom);
         return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-    }
-
-    private float getBoundedScale(float scale) {
-        return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
     }
 
     void getRawPoint(MotionEvent ev, int index, PointF point) {
@@ -728,5 +766,23 @@ public class MyCanvas extends View {
         return found;
     }
 
+    public LayerModel getLastLayer() {
+        if (layers == null || layers.isEmpty())
+            return null;
+        else return layers.get(layers.size() - 1);
+    }
+
     //endregion
+
+    // region --> L I S T E N E R S
+
+    public interface OnLayerClickListener {
+        void onLayerClick(LayerModel layerModel);
+    }
+
+    public interface OnLayerSelectListener {
+        void onLayerSelected(LayerModel layerModel, int layerIndex);
+    }
+
+    // endregion
 }

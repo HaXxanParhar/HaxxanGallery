@@ -41,6 +41,8 @@ import com.drudotstech.customgallery.filters.FilterTask;
 import com.drudotstech.customgallery.filters.FilterType;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectStickerCallback;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.StickersBottomSheet;
+import com.drudotstech.customgallery.mycanvas.models.CanvasState;
+import com.drudotstech.customgallery.mycanvas.models.LayerModel;
 import com.drudotstech.customgallery.utils.AnimationHelper;
 import com.google.android.material.slider.Slider;
 

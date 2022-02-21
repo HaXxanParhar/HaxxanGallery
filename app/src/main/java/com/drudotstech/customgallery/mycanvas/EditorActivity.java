@@ -7,7 +7,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.os.Bundle;
@@ -29,6 +32,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -51,6 +55,12 @@ import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectWidgetCallback
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.StickersBottomSheet;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.WidgetModel;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.WidgetsBottomSheet;
+import com.drudotstech.customgallery.mycanvas.models.CanvasState;
+import com.drudotstech.customgallery.mycanvas.models.LayerModel;
+import com.drudotstech.customgallery.mycanvas.models.TextInfo;
+import com.drudotstech.customgallery.mycanvas.my_color_picker.AlphaPicker;
+import com.drudotstech.customgallery.mycanvas.my_color_picker.HuePicker;
+import com.drudotstech.customgallery.mycanvas.my_color_picker.SaturationPicker;
 import com.drudotstech.customgallery.utils.AnimationHelper;
 import com.drudotstech.customgallery.utils.MyUtils;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -65,7 +75,7 @@ import java.util.List;
 @SuppressLint("SetTextI18n")
 public class EditorActivity extends BaseActivity implements FilterAdapter.FilterSelectionCallback,
         BlurBitmapCallback, SelectStickerCallback, FilterTask.ApplyFilterCallback, SelectWidgetCallback,
-        SelectEmojiCallback {
+        SelectEmojiCallback, TextFontAdapter.FontSelectionCallback, AddTextFragment.AddTextCallback {
 
 
     private static final int RC_LOCATION = 101;
@@ -82,22 +92,36 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private RelativeLayout rlCanvas;
     private View ivBack, ivClose, tvSave, tvDone;
     private TextView tvToolbarName;
-    private View llStickers, ivAddSticker, ivAddWidgets, ivAddEmoji;
-    private View llAdjust, llBrightness, llSaturation, llContrast, llWarmth, llSlider;
-    private TextView tvSlider;
-    private Slider slider;
     private View loading;
 
-    private StickersBottomSheet stickersBottomSheet;
-    private WidgetsBottomSheet widgetsBottomSheet;
-    private EmojisBottomSheet emojisBottomSheet;
-
-    // ------------------------------------ R E C Y C L E R V I E W --------------------------------
+    // Filter module
     private RecyclerView rvFilters;
     private List<FilterModel> filters;
     private FilterAdapter filterAdapter;
     private LinearLayoutManager filtersLayoutManager;
     private int selectedFilterPosition;
+
+    // Stickers module
+    private View llStickers, ivAddSticker, ivAddWidgets, ivAddEmoji;
+    private StickersBottomSheet stickersBottomSheet;
+    private WidgetsBottomSheet widgetsBottomSheet;
+    private EmojisBottomSheet emojisBottomSheet;
+
+    // Adjust module
+    private View llAdjust, llBrightness, llSaturation, llContrast, llWarmth, llSlider;
+    private TextView tvSlider;
+    private Slider slider;
+
+    // Text module
+    private View llText, llFont, llColor, llAlpha, ivKeyboard, llColorPickers, llAlphaPicker;
+    private HuePicker huePicker;
+    private SaturationPicker saturationPicker;
+    private AlphaPicker alphaPicker;
+    private List<View> lines;
+    private RecyclerView rvFonts;
+    private List<WidgetModel> fonts;
+    private TextFontAdapter fontAdapter;
+    private LinearLayoutManager fontsLayoutManager;
 
 
     // -------------------------------------- V A R I A B L E S ------------------------------------
@@ -108,7 +132,11 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private Bitmap tempBitmap;
     private FilterType filterType;
     private FusedLocationProviderClient fusedLocationProviderClient;
+    private TextInfo textInfo;
     private String media;
+
+    private int selectedTextTab = 0;
+
     private float brightness = 50;
     private float contrast = 50;
     private float saturation = 50;
@@ -129,7 +157,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         }
     });
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -142,6 +169,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         tvSave = findViewById(R.id.tv_next);
         secondToolbar = findViewById(R.id.second_action_bar);
+        secondToolbar.setVisibility(View.GONE);
         ivClose = findViewById(R.id.iv_close);
         tvToolbarName = findViewById(R.id.tv_actionbar_name);
         tvDone = findViewById(R.id.tv_done);
@@ -152,11 +180,13 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         ivFilter = findViewById(R.id.iv_filter);
         ivAdjust = findViewById(R.id.iv_adjust);
         ivStickers = findViewById(R.id.iv_stickers);
+        ivText = findViewById(R.id.iv_text);
 
         rvFilters = findViewById(R.id.rv_filters);
         rvFilters.setVisibility(View.GONE);
 
         llAdjust = findViewById(R.id.ll_adjust);
+        llAdjust.setVisibility(View.GONE);
         llBrightness = findViewById(R.id.ll_brightness);
         llContrast = findViewById(R.id.ll_contrast);
         llSaturation = findViewById(R.id.ll_saturation);
@@ -167,10 +197,27 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         loading = findViewById(R.id.rl_loading);
 
         llStickers = findViewById(R.id.ll_stickers);
+        llStickers.setVisibility(View.GONE);
         ivAddSticker = findViewById(R.id.iv_sticker);
         ivAddWidgets = findViewById(R.id.iv_widget);
         ivAddEmoji = findViewById(R.id.iv_emoji);
 
+        llText = findViewById(R.id.ll_text);
+        llText.setVisibility(View.GONE);
+        llFont = findViewById(R.id.ll_text_fonts);
+        llColor = findViewById(R.id.ll_text_color);
+        llAlpha = findViewById(R.id.ll_text_opacity);
+        ivKeyboard = findViewById(R.id.iv_keyboard);
+        llColorPickers = findViewById(R.id.ll_color_pickers);
+        huePicker = findViewById(R.id.hue_picker);
+        saturationPicker = findViewById(R.id.saturation_picker);
+        llAlphaPicker = findViewById(R.id.ll_alpha_pickers);
+        alphaPicker = findViewById(R.id.alpha_picker);
+        rvFonts = findViewById(R.id.rv_text_font);
+        lines = new ArrayList<>();
+        lines.add(findViewById(R.id.line_1));
+        lines.add(findViewById(R.id.line_2));
+        lines.add(findViewById(R.id.line_3));
 
         //------------------------------  S E T U P  &   L O A D  ----------------------------------
 
@@ -184,11 +231,17 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         //create bitmap from media and load in imageView
         initCanvas();
 
-        // set Filters RecyclerView
-        setRecyclerView();
+        // set Filters & Fonts RecyclerView
+        setFiltersRecyclerView();
+
+        setFontsRecyclerView();
+
 
         // set listener for slider value change
         setSliderChangeListener();
+
+        // set listener for Color Pickers
+        setColorPickerListeners();
 
 
         // init location provider
@@ -280,10 +333,34 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             emojisBottomSheet.show(getSupportFragmentManager(), "emojis");
         });
 
+        // --------------- Text Module -----------------------
+        ivText.setOnClickListener(v -> {
+            selected = 3;
+            showSecondMenu(true);
+            saveCurrentState();
+            myCanvas.setSelectionEnabled(true);
+
+            // check if no text layer is added already
+//            openAddTextFragment("");
+        });
+
+        llFont.setOnClickListener(v -> {
+            selectTextTab(0);
+        });
+
+        llColor.setOnClickListener(v -> {
+            selectTextTab(1);
+        });
+
+        llAlpha.setOnClickListener(v -> {
+            selectTextTab(2);
+        });
+
+        ivKeyboard.setOnClickListener(v -> {
+            openAddTextFragment();
+        });
 
         // --------------- Others -----------------------
-
-        // save the current changes
         tvDone.setOnClickListener(view -> {
 
             // hide the main menus
@@ -317,6 +394,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             } else {
                 revertBackToPreviousState(); // revert to memento state
                 myCanvas.setSelectionEnabled(false); // disable selection
+                // todo : unselect all the layers in the canvas
                 showSecondMenu(false);
             }
         });
@@ -327,6 +405,47 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         // close the activity
         ivBack.setOnClickListener(view -> hideMenuOrBack());
 
+    }
+
+    private void setCanvasListeners() {
+
+        // When clicked on a Layer. Useful for editing the sticker containing Text
+        myCanvas.setOnLayerClickListener(new MyCanvas.OnLayerClickListener() {
+            @Override
+            public void onLayerClick(LayerModel layerModel) {
+
+                // If Text Module is opened
+                if (selected == 3
+                        && layerModel.type == LayerModel.STICKER
+                        && layerModel.sticker != null
+                        && layerModel.sticker.stickerType == StickerView.EDITABLE_TEXT
+                        && layerModel.textInfo != null) {
+
+                    textInfo = layerModel.textInfo.copy();
+
+                    // set font
+                    fontAdapter.setSelectedFont(textInfo.fontIndex);
+
+                    // set color pickers
+                    huePicker.updatePosition(textInfo.huePosition);
+                    saturationPicker.updatePosition(textInfo.saturationPosition);
+                    alphaPicker.updatePosition(textInfo.alphaPosition);
+
+                    String stickerText = layerModel.sticker.text;
+                    openEditTextFragment(stickerText);
+                }
+            }
+        });
+
+        /**
+         * When a Layer is selected. Not same as clicked because layer selection happens on Touch Down Before click is decided
+         */
+        myCanvas.setOnLayerSelectListener(new MyCanvas.OnLayerSelectListener() {
+            @Override
+            public void onLayerSelected(LayerModel layerModel, int layerIndex) {
+                Toast.makeText(context, "Layer " + layerIndex + " selected!", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void saveCurrentState() {
@@ -368,6 +487,111 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
             }
         });
+    }
+
+    private void setColorPickerListeners() {
+
+        // set default color picker values
+        huePicker.setPosition(50); // to show thumb in center
+        saturationPicker.setPosition(0); // to show the white color
+        alphaPicker.setPosition(100); // to show the 100% opacity/alpha
+
+        // create color as result of all three pickers
+        int defaultColor = getColorFromHSVA(huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
+                saturationPicker.getCurrentValue(), alphaPicker.getCurrentAlpha());
+
+        // update saturation picker and alpha picker
+        saturationPicker.updateSaturationColor(huePicker.getCurrentHue());
+        alphaPicker.updatePickerHueSaturation(defaultColor);
+
+
+        // set color info in TextInfo object
+        if (textInfo == null) textInfo = new TextInfo();
+        textInfo.huePosition = 50;
+        textInfo.hsv[0] = huePicker.getCurrentHue();
+
+        textInfo.saturationPosition = 0;
+        textInfo.hsv[1] = saturationPicker.getCurrentSaturation();
+        textInfo.hsv[2] = saturationPicker.getCurrentValue();
+
+        textInfo.alphaPosition = 100;
+        textInfo.alpha = alphaPicker.getCurrentAlpha();
+
+        huePicker.setHueChangeListener((color, hue) -> {
+            // update textInfo object
+            textInfo.hsv[0] = huePicker.getCurrentHue();
+            textInfo.huePosition = huePicker.getPosition();
+
+            // create color as result of all three pickers
+            int newColor = getColorFromHSVA(huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
+                    saturationPicker.getCurrentValue(), alphaPicker.getCurrentAlpha());
+
+            // update saturation picker and alpha picker
+            saturationPicker.updateSaturationColor(huePicker.getCurrentHue());
+            alphaPicker.updatePickerHueSaturation(newColor);
+
+            // update the layer
+            updateTheEditableStickerLayer(newColor, huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
+                    saturationPicker.getCurrentValue());
+
+        });
+
+        saturationPicker.setSaturationChangeListener((color, saturation) -> {
+            // update textInfo object
+            textInfo.hsv[1] = saturationPicker.getCurrentSaturation();
+            textInfo.hsv[2] = saturationPicker.getCurrentValue();
+            textInfo.saturationPosition = saturationPicker.getPosition();
+
+            // create color as result of all three pickers
+            int newColor = getColorFromHSVA(huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
+                    saturationPicker.getCurrentValue(), alphaPicker.getCurrentAlpha());
+
+            // update alpha picker
+            alphaPicker.updatePickerHueSaturation(newColor);
+
+            // update the layer
+            updateTheEditableStickerLayer(newColor, huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(), saturationPicker.getCurrentValue());
+        });
+
+        alphaPicker.setAlphaChangeListener((color, value) -> {
+            // update textInfo object
+            textInfo.alpha = alphaPicker.getCurrentAlpha();
+            textInfo.alphaPosition = alphaPicker.getPosition();
+
+            // create color as result of all three pickers
+            int newColor = getColorFromHSVA(huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
+                    saturationPicker.getCurrentValue(), alphaPicker.getCurrentAlpha());
+
+            // update the layer
+            updateTheEditableStickerLayer(newColor, huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(), saturationPicker.getCurrentValue());
+        });
+    }
+
+    private void updateTheEditableStickerLayer(int newColor, float currentHue, float currentSaturation, float currentValue) {
+        final LayerModel lastLayer = myCanvas.getLastLayer();
+        if (lastLayer != null
+                && lastLayer.type == LayerModel.STICKER
+                && lastLayer.sticker != null
+                && lastLayer.textInfo != null
+                && lastLayer.sticker.isSelected
+                && lastLayer.sticker.stickerType == StickerView.EDITABLE_TEXT) {
+
+            // update the TextInfo of Layer
+            lastLayer.textInfo.hsv = new float[]{currentHue, currentSaturation, currentValue};
+            lastLayer.textInfo.alpha = alphaPicker.getCurrentAlpha();
+            lastLayer.textInfo.huePosition = huePicker.getPosition();
+            lastLayer.textInfo.saturationPosition = saturationPicker.getPosition();
+            lastLayer.textInfo.alphaPosition = alphaPicker.getPosition();
+
+            // update the StickerView
+            lastLayer.sticker.textPaint.setColor(newColor);
+            myCanvas.invalidate();
+        }
+    }
+
+    private int getColorFromHSVA(float hue, float saturation, float value, int alpha) {
+        final float[] hsv = {hue, saturation, value};
+        return Color.HSVToColor(alpha, hsv);
     }
 
     private void revertBackToPreviousState() {
@@ -414,10 +638,16 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     // show the second action bar
                     animationHelper.moveFromTopToBottom(secondToolbar, 48f);
                     break;
+
                 case 3:
                     tvToolbarName.setText("Text");
                     // show the second action bar
                     animationHelper.moveFromTopToBottom(secondToolbar, 48f);
+                    // show the text module
+                    animationHelper.moveFromBottomToTop(llText, 200f);
+                    // make selection from the Text Tab
+                    selectTextTab(selectedTextTab);
+
                     break;
 
                 ///  --------- sub menus ------------------
@@ -449,7 +679,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     showSlider(true);
                     break;
             }
-
         }
 
         // Hide/close Views
@@ -462,6 +691,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     // hide the second action bar
                     animationHelper.moveToTop(secondToolbar, 48f);
                     selected = -1;
+
                     break;
                 case 1:
                     tvToolbarName.setText("Adjust");
@@ -478,8 +708,11 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     selected = -1;
                     myCanvas.resetStickerSelection();
                     break;
+
                 case 3:
                     tvToolbarName.setText("Text");
+                    // hide the bottom view as well
+                    animationHelper.moveToBottom(llText, 200f);
                     // hide the second action bar
                     animationHelper.moveToTop(secondToolbar, 48f);
                     selected = -1;
@@ -509,7 +742,45 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         }
     }
 
-    private void setRecyclerView() {
+    private void selectTextTab(int selectedTab) {
+        switch (selectedTab) {
+
+            case 0: // Fonts RecyclerView
+                rvFonts.setVisibility(View.VISIBLE);
+                llColorPickers.setVisibility(View.GONE);
+                llAlphaPicker.setVisibility(View.GONE);
+                animateTopSheetTabLayout(0);
+                break;
+
+            case 1:
+                rvFonts.setVisibility(View.GONE);
+                llColorPickers.setVisibility(View.VISIBLE);
+                llAlphaPicker.setVisibility(View.GONE);
+                animateTopSheetTabLayout(1);
+                break;
+
+            case 2:
+                rvFonts.setVisibility(View.GONE);
+                llColorPickers.setVisibility(View.GONE);
+                llAlphaPicker.setVisibility(View.VISIBLE);
+                animateTopSheetTabLayout(2);
+                break;
+        }
+    }
+
+    private void animateTopSheetTabLayout(int next) {
+        AnimationHelper animationHelper = new AnimationHelper(80);
+        if (next > selectedTextTab) {
+            animationHelper.animateSlideToRight(lines, selectedTextTab, next);
+        } else if (next < selectedTextTab) {
+            animationHelper.animateSlideToLeft(lines, selectedTextTab, next);
+        }
+
+        // update the tab position after applying the ui changes
+        selectedTextTab = next;
+    }
+
+    private void setFiltersRecyclerView() {
         filters = new ArrayList<>();
         filters.add(new FilterModel(FilterType.NO_FILTER, "Original", R.drawable.image2, true));
         filters.add(new FilterModel(FilterType.DEEP_BLUE, "Deep Blue", R.drawable.image));
@@ -531,6 +802,29 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         filtersLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
         rvFilters.setLayoutManager(filtersLayoutManager);
         rvFilters.setAdapter(filterAdapter);
+    }
+
+    private void setFontsRecyclerView() {
+        // create list of fonts
+        fonts = new ArrayList<>();
+        fonts.add(new WidgetModel("Text", R.font.metropolis_regular, true));
+        fonts.add(new WidgetModel("Text", R.font.muchomacho));
+        fonts.add(new WidgetModel("Text", R.font.shake_it_off));
+        fonts.add(new WidgetModel("Text", R.font.bubble_love));
+        fonts.add(new WidgetModel("Text", R.font.metropolis_bold));
+        fonts.add(new WidgetModel("Text", R.font.cheri));
+        fonts.add(new WidgetModel("Text", R.font.metropolis_medium));
+
+        // also assign the selected Font
+        if (textInfo == null) textInfo = new TextInfo();
+        textInfo.fontIndex = 0;
+        textInfo.typeface = ResourcesCompat.getFont(context, R.font.metropolis_regular);
+
+        // set recyclerView
+        fontAdapter = new TextFontAdapter(context, fonts, this);
+        fontsLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
+        rvFonts.setLayoutManager(fontsLayoutManager);
+        rvFonts.setAdapter(fontAdapter);
     }
 
     private void initCanvas() {
@@ -570,6 +864,8 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                             RectF rectF = CanvasUtils.getCenteredRect(context, tempBitmap);
                             myCanvas.addLayer(new LayerModel(tempBitmap, rectF, FilterType.NO_FILTER));
 
+                            setCanvasListeners();
+
                             blurredBitmap = originalBitmap.copy(originalBitmap.getConfig(), true);
                             blurredBitmap = CanvasUtils.getScreenFillBitmap(context, blurredBitmap);
                             new BlurTask(context, blurredBitmap, 32, EditorActivity.this).execute();
@@ -580,7 +876,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             Toast.makeText(context, "Exception in load bitmap : " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
-
 
     /**
      * When blur result is returned
@@ -671,7 +966,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     @Override
     public void onStickerSelected(int stickerSrc) {
         try {
-
             // create bitmap
             Bitmap sticker = CanvasUtils.getBitmapFromVector(context, stickerSrc);
             StickerView stickerView = new StickerView(context, sticker, myCanvas.screenRect);
@@ -695,20 +989,18 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     public void onWidgetSelected(WidgetModel widgetModel, Bitmap bitmap) {
 
         try {
-            // create paint from the widget font
-//        Paint textPaint = new Paint();
-//        textPaint.setColor(Color.WHITE);
-//        textPaint.setAntiAlias(true);
-//        textPaint.setTypeface(ResourcesCompat.getFont(context, widgetModel.getFont()));
-//        textPaint.setTextSize(200);
-//        StickerView stickerView = new StickerView(context, widgetModel.getText(), textPaint,
-//                myCanvas.screenRect);
-//
-//        // create layer and add in layers of canvas
-//        LayerModel filterLayer = new LayerModel(stickerView);
-//        myCanvas.addLayer(filterLayer);
+            // get appropriate text size for the widget
+            final float textSize = MyUtils.getTextSize(widgetModel.getText()) * 2.5f;
 
-            final StickerView stickerView = new StickerView(context, bitmap, myCanvas.screenRect);
+            // create paint from the widget font
+            Paint textPaint = new Paint();
+            textPaint.setColor(Color.WHITE);
+            textPaint.setAntiAlias(true);
+            textPaint.setTypeface(ResourcesCompat.getFont(context, widgetModel.getFont()));
+            textPaint.setTextSize(textSize);
+            StickerView stickerView = new StickerView(context, widgetModel.getText(), textPaint
+                    , myCanvas.screenRect, StickerView.TEXT, (int) textSize);
+
             // create layer and add in layers of canvas
             LayerModel filterLayer = new LayerModel(stickerView);
             myCanvas.addLayer(filterLayer);
@@ -729,12 +1021,11 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     @Override
     public void onEmojiSelected(String emoji, Bitmap bitmap) {
 //        Paint textPaint = new Paint();
-//        textPaint.setColor(Color.WHITE);
 //        textPaint.setAntiAlias(true);
 //        textPaint.setTypeface(ResourcesCompat.getFont(context, R.font.metropolis_regular));
 //        textPaint.setTextSize(100);
-//        StickerView stickerView = new StickerView(context, emoji, textPaint, myCanvas.screenRect,
-//                StickerView.EMOJI);
+//        StickerView stickerView = new StickerView(context, emoji, textPaint, R.font.metropolis_regular,
+//                myCanvas.screenRect, StickerView.EMOJI);
 
         final StickerView stickerView = new StickerView(context, bitmap, myCanvas.screenRect);
         // create layer and add in layers of canvas
@@ -746,6 +1037,100 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             emojisBottomSheet.dismiss();
     }
 
+    /**
+     * When Font is selected from the fonts RecyclerView in Text Module
+     */
+    @Override
+    public void onFontSelected(int position) {
+
+        // updating the textInfo
+        textInfo.fontIndex = position;
+        final Typeface typeface = ResourcesCompat.getFont(context, fonts.get(position).getFont());
+        textInfo.typeface = typeface;
+
+        final LayerModel lastLayer = myCanvas.getLastLayer();
+        if (lastLayer != null
+                && lastLayer.type == LayerModel.STICKER
+                && lastLayer.sticker != null
+                && lastLayer.textInfo != null
+                && lastLayer.sticker.isSelected
+                && lastLayer.sticker.stickerType == StickerView.EDITABLE_TEXT) {
+
+            // update the TextInfo of Layer
+            lastLayer.textInfo.fontIndex = position;
+            lastLayer.textInfo.typeface = typeface;
+
+            // update the stickerView
+            lastLayer.sticker.textPaint.setTypeface(typeface);
+            myCanvas.invalidate();
+        }
+    }
+
+    public int getSelectedFont() {
+        int index = -1;
+        if (fonts != null) {
+            for (int i = 0; i < fonts.size(); i++) {
+                if (fonts.get(i).isSelected()) {
+                    index = i;
+                    break;
+                }
+            }
+        }
+
+        if (index == -1)
+            return R.font.metropolis_regular;
+        else
+            return fonts.get(index).getFont();
+    }
+
+    public int getFontIndex(int font) {
+        int index = -1;
+        if (fonts != null) {
+            for (int i = 0; i < fonts.size(); i++) {
+                if (fonts.get(i).getFont() == font) {
+                    index = i;
+                    break;
+                }
+            }
+        }
+        return index;
+    }
+
+    private void openAddTextFragment() {
+        final AddTextFragment fragment = new AddTextFragment(this, this, blurredBitmap, textInfo);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.fragment_container_editor, fragment)
+                .addToBackStack("add_text")
+                .commit();
+    }
+
+    private void openEditTextFragment(String text) {
+        final AddTextFragment fragment = new AddTextFragment(this, this, blurredBitmap, textInfo, text);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.fragment_container_editor, fragment)
+                .addToBackStack("edit_text")
+                .commit();
+    }
+
+    /**
+     * When Text is Added/Edited from the AddTextFragment in Text Module
+     */
+    @Override
+    public void onTextAdded(String text) {
+        Paint paint = new Paint();
+        paint.setTypeface(textInfo.typeface);
+        paint.setColor(textInfo.getColor());
+        paint.setTextSize(60);
+        StickerView stickerView = new StickerView(context, text, paint, myCanvas.screenRect, StickerView.EDITABLE_TEXT, 60);
+        myCanvas.addLayer(new LayerModel(stickerView, textInfo));
+    }
+
+    @Override
+    public void onTextEdited(String text) {
+
+    }
 
     private void checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
@@ -767,7 +1152,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             }
         }
     }
-
 
     private void getDeviceLocation() {
         try {
@@ -819,6 +1203,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         } else if (selected != -1) {
             revertBackToPreviousState();
             showSecondMenu(false);
+            // todo : unselect all the layers of the canvas
         } else {
             showSaveChangesPopup();
         }
@@ -884,5 +1269,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         originalBitmap.recycle();
         blurredBitmap.recycle();
     }
+
 
 }
