@@ -35,6 +35,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+
     sourceSets {
         main {
             res {
@@ -45,9 +46,6 @@ android {
 }
 
 dependencies {
-
-    // croppy
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
 
     implementation 'androidx.appcompat:appcompat:1.4.0'
@@ -79,7 +77,11 @@ dependencies {
     implementation 'com.wang.avi:library:2.1.3'
 
 
-//     croppy -------------------------------
+//    ------------------------ croppy -------------------------------
+
+    // croppy
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
     //Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.1.0'

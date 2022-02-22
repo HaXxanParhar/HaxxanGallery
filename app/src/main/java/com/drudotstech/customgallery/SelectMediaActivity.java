@@ -41,7 +41,8 @@ public class SelectMediaActivity extends AppCompatActivity {
                 if (galleryResult.getConfig().isSingleSelection()) {
                     // get results of Single image
                     GalleryMediaModel galleryMediaModel = galleryResult.getSinglePicture();
-                    Toast.makeText(context, "Got Single image", Toast.LENGTH_SHORT).show();
+                    final String mediaPath = galleryMediaModel.getMediaPath();
+                    Toast.makeText(context, "Media : " + mediaPath, Toast.LENGTH_SHORT).show();
                 } else {
                     // get results of multiple images
                     final List<GalleryMediaModel> pictures = galleryResult.getPictures();

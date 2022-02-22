@@ -30,14 +30,15 @@ import java.util.List;
 
 public class MyCanvas extends View {
 
+    // region --> V A R I A B L E S <
     private static final String TAG = "Haxx";
     private static final int INVALID_VALUE = -1;
-    private static final int SCALING_SENSITIVITY = 100; // lesser value = more sensitive
+    private static final int SCALING_SENSITIVITY = 200; // lesser value = more sensitive
     private static final float MIN_SCALE = 0.3f; // min scale factor
     private static final float MAX_SCALE = 15; // the max scale factor
     private static final int CLICK_DELAY = 200;// the delay (ms) between action down and up that will count as click
     private final Context context;
-    // region --> V A R I A B L E S <
+
     public RectF screenRect; // rect of the canvas
     private List<Float> listX = new ArrayList<>();
     private List<Float> listY = new ArrayList<>();
@@ -61,6 +62,7 @@ public class MyCanvas extends View {
     private int selectedLayerIndex = INVALID_VALUE; // the index of the selected layer from the layers list
     private float dLeft, dTop, dRight, dBottom; // rect differences from the touch x,y. useful for drawing bitmap accurately after touch
     private long actionDownTime;
+    private boolean isPointerUpNow;
 
     // for rotation & scaling
     private PointF secondPoint = new PointF(); // temp point
@@ -71,6 +73,7 @@ public class MyCanvas extends View {
     private float startingScale = INVALID_VALUE; // to store starting scale before applying new scale
     private float startingRotation = INVALID_VALUE; // to store starting angle before applying new rotation
     private Paint greenPaint;
+
 
     // Listeners
     private OnLayerClickListener onLayerClickListener;
@@ -96,11 +99,11 @@ public class MyCanvas extends View {
         bitmapPaint.setAntiAlias(true);
     }
 
+    //region --> G E T T E R S   &   S E T T E R S <--
+
     public static float getBoundedScale(float scale) {
         return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
     }
-
-    //region --> G E T T E R S   &   S E T T E R S <--
 
     public void init() {
         final ViewGroup.LayoutParams layoutParams = getLayoutParams();
@@ -146,6 +149,7 @@ public class MyCanvas extends View {
                 layerModel.sticker.setSelected(false);
             }
         }
+        selectedLayer = null;
 
         // add new layer in the layers
         switch (layer.type) {
@@ -166,6 +170,9 @@ public class MyCanvas extends View {
                 layer.sticker.canvasRect = mainRect;//todo: verify if we need this line or not
                 layer.sticker.setSelected(true);
                 layers.add(layer);
+
+                // also update the selected layer
+                selectedLayer = layers.get(layers.size() - 1);
                 break;
         }
         invalidate();
@@ -216,11 +223,11 @@ public class MyCanvas extends View {
         this.onLayerClickListener = onLayerClickListener;
     }
 
-    // endregion
-
     public void setOnLayerSelectListener(OnLayerSelectListener onLayerSelectListener) {
         this.onLayerSelectListener = onLayerSelectListener;
     }
+
+    // endregion
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -279,8 +286,6 @@ public class MyCanvas extends View {
 
     }
 
-    // region --> H E L P E R S   M E T H O D S   F O R    G E S T U R E S <--
-
     @Override
     @SuppressLint("ClickableViewAccessibility")
     public boolean onTouchEvent(MotionEvent event) {
@@ -296,7 +301,6 @@ public class MyCanvas extends View {
 
                 switch (event.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
-                        Log.d("Haxx", "--- TEST_BORDER : " + rawX + " , " + rawY + "   |   " + X + " , " + Y + " ===> " + (rawX - X) + "  ,   " + (rawY - Y) + " ----- ");
 
                         // note the action down time
                         actionDownTime = System.currentTimeMillis();
@@ -307,12 +311,8 @@ public class MyCanvas extends View {
                         // get sticker index on which user touched for selection/unselection
                         int touchedViewIndex = findSelectedViewIndex(rawX, rawY);
 
-                        Log.d("TEST_MULTIPLE_STICKERS", "--------------------------------- Down ---------------------------------------");
-                        Log.d("TEST_MULTIPLE_STICKERS", "down Index : " + touchedViewIndex + " | Previous : " + selectedLayerIndex);
-
                         // nothing is selected already
                         if (selectedLayer == null) {
-                            Log.d("TEST_MULTIPLE_STICKERS", " Selected == null");
 
                             // touch a view/sticker
                             if (touchedViewIndex != INVALID_VALUE) {
@@ -333,9 +333,6 @@ public class MyCanvas extends View {
                                 // save the starting rect
                                 selectedLayer.sticker.updateStartingRect();
 
-                                Log.d("TEST_MULTIPLE_STICKERS", "Updated Previous : " + selectedLayerIndex);
-
-
                                 // calculate the difference from touch place to selected Rect
                                 dLeft = (rawX - selectedLayer.sticker.rect.left);
                                 dRight = (rawX - selectedLayer.sticker.rect.right);
@@ -347,7 +344,6 @@ public class MyCanvas extends View {
 
                         // Some View is selected already
                         else {
-                            Log.d("TEST_MULTIPLE_STICKERS", " Selected != null");
 
                             // if clicked on a view/sticker & not on empty screen
                             if (touchedViewIndex != INVALID_VALUE) {
@@ -384,6 +380,7 @@ public class MyCanvas extends View {
                                 if (selectedLayerIndex != INVALID_VALUE) {
                                     layers.get(selectedLayerIndex).sticker.setSelected(false);
                                     selectedLayerIndex = INVALID_VALUE;
+                                    selectedLayer = null;
                                 }
                             }
                             invalidate();
@@ -391,16 +388,32 @@ public class MyCanvas extends View {
                         break;
 
                     case MotionEvent.ACTION_POINTER_DOWN:
-                        Log.v(TAG, "ACTION_POINTER_DOWN");
 
                         pointerId2 = event.getPointerId(event.getActionIndex());
+                        Log.v("TEST_GESTURES", "ACTION_POINTER_DOWN with p2 : " + pointerId2);
                         if (selectedLayer != null) {
                             getRawPoint(event, pointerId1, firstPoint);
                             getRawPoint(event, pointerId2, secondPoint);
 
                             // save the starting rect
                             selectedLayer.sticker.updateStartingRect();
+
+                            // calculate the difference from touch place to selected Rect
+                            dLeft = (rawX - selectedLayer.sticker.rect.left);
+                            dRight = (rawX - selectedLayer.sticker.rect.right);
+                            dTop = (rawY - selectedLayer.sticker.rect.top);
+                            dBottom = (rawY - selectedLayer.sticker.rect.bottom);
                         }
+                        break;
+
+
+                    case MotionEvent.ACTION_POINTER_UP:
+                        // reset the 2nd touch pointer
+                        pointerId2 = INVALID_VALUE;
+                        startingRotation = INVALID_VALUE;
+                        startingScale = INVALID_VALUE;
+                        Log.v("TEST_GESTURES", "ACTION_POINTER_UP p2 Cleared!");
+                        isPointerUpNow = true;
 
                         break;
 
@@ -408,6 +421,7 @@ public class MyCanvas extends View {
 
                         listX.clear();
                         listY.clear();
+                        Log.v("TEST_GESTURES", "ACTION_UP p1 Cleared!");
 
                         // reset the first touch pointer
                         pointerId1 = INVALID_VALUE;
@@ -460,18 +474,22 @@ public class MyCanvas extends View {
 
                         break;
 
-                    case MotionEvent.ACTION_POINTER_UP:
-                        // reset the 2nd touch pointer
-                        pointerId2 = INVALID_VALUE;
-                        startingRotation = INVALID_VALUE;
-                        startingScale = INVALID_VALUE;
-                        break;
-
                     case MotionEvent.ACTION_MOVE:
                         listX.add(rawX);
                         listY.add(rawY);
                         // only perform actions if view is clicked/selected
                         if (selectedLayer != null && selectedLayer.sticker.isSelected()) {
+
+                            // When second finger is up, recalculate the differences
+                            if (isPointerUpNow) {
+                                // calculate the difference from touch place to selected Rect
+                                dLeft = (rawX - selectedLayer.sticker.rect.left);
+                                dRight = (rawX - selectedLayer.sticker.rect.right);
+                                dTop = (rawY - selectedLayer.sticker.rect.top);
+                                dBottom = (rawY - selectedLayer.sticker.rect.bottom);
+                                isPointerUpNow = false;
+                            }
+
 
                             // ---------------------------------- Translating ------------------------------
 
@@ -596,6 +614,8 @@ public class MyCanvas extends View {
             return false;
         }
     }
+
+    // region --> H E L P E R S   M E T H O D S   F O R    G E S T U R E S <--
 
     private int findSelectedViewIndex(float x, float y) {
         int selectedIndex = INVALID_VALUE;
@@ -753,6 +773,32 @@ public class MyCanvas extends View {
             layers.set(1, layerModel);
         }
         adjustColors();
+    }
+
+    public int findLayer(int LayerType) {
+        int index = -1;
+        for (int i = 0; i < layers.size(); i++) {
+            if (layers.get(i).type == LayerType) {
+                index = i;
+                break;
+            }
+        }
+
+        return index;
+    }
+
+    public int findStickerViewLayer(int stickerType) {
+        int index = -1;
+        for (int i = 0; i < layers.size(); i++) {
+            if (layers.get(i).type == LayerModel.STICKER
+                    && layers.get(i).sticker != null
+                    && layers.get(i).sticker.stickerType == stickerType) {
+                index = i;
+                break;
+            }
+        }
+
+        return index;
     }
 
     private boolean isPaintAdded() {

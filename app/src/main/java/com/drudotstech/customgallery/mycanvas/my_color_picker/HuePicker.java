@@ -96,6 +96,14 @@ public class HuePicker extends BasePicker {
             hueChangeListener.onHueChanged(color, hue);
     }
 
+    @Override
+    public void updatePosition(float position) {
+        super.updatePosition(position);
+        final float hue = (position / 100) * 360;
+        hsv[0] = hue;
+        final int color = Color.HSVToColor(hsv);
+        setThumbPaintColor(color);
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override

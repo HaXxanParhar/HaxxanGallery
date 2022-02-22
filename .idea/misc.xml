@@ -95,6 +95,7 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_emoji.xml" value="0.26944444444444443" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_filter.xml" value="0.5" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_sticker.xml" value="0.21614583333333334" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_text_align.xml" value="0.2794871794871795" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_text_font.xml" value="0.5" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_widget.xml" value="0.26944444444444443" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/fragment_add_text.xml" value="0.2611111111111111" />
@@ -108,7 +109,7 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_slider.xml" value="0.2611111111111111" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_stickers_module.xml" value="0.2611111111111111" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_test.xml" value="0.26944444444444443" />
-        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_text_module.xml" value="0.2611111111111111" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_text_module.xml" value="0.33" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/loading_main.xml" value="0.24814814814814815" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/loading_maing.xml" value="0.26481481481481484" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/pic_holder_item.xml" value="0.5" />

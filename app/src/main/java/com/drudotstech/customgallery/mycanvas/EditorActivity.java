@@ -13,6 +13,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -48,6 +49,7 @@ import com.drudotstech.customgallery.filters.FilterAdapter;
 import com.drudotstech.customgallery.filters.FilterModel;
 import com.drudotstech.customgallery.filters.FilterTask;
 import com.drudotstech.customgallery.filters.FilterType;
+import com.drudotstech.customgallery.gallery.utils.GalleryConstants;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.EmojisBottomSheet;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectEmojiCallback;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectStickerCallback;
@@ -55,6 +57,7 @@ import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectWidgetCallback
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.StickersBottomSheet;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.WidgetModel;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.WidgetsBottomSheet;
+import com.drudotstech.customgallery.mycanvas.models.AlignModel;
 import com.drudotstech.customgallery.mycanvas.models.CanvasState;
 import com.drudotstech.customgallery.mycanvas.models.LayerModel;
 import com.drudotstech.customgallery.mycanvas.models.TextInfo;
@@ -62,6 +65,7 @@ import com.drudotstech.customgallery.mycanvas.my_color_picker.AlphaPicker;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.HuePicker;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.SaturationPicker;
 import com.drudotstech.customgallery.utils.AnimationHelper;
+import com.drudotstech.customgallery.utils.FileUtils;
 import com.drudotstech.customgallery.utils.MyUtils;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -75,8 +79,8 @@ import java.util.List;
 @SuppressLint("SetTextI18n")
 public class EditorActivity extends BaseActivity implements FilterAdapter.FilterSelectionCallback,
         BlurBitmapCallback, SelectStickerCallback, FilterTask.ApplyFilterCallback, SelectWidgetCallback,
-        SelectEmojiCallback, TextFontAdapter.FontSelectionCallback, AddTextFragment.AddTextCallback {
-
+        SelectEmojiCallback, TextFontAdapter.FontSelectionCallback, AddTextFragment.AddTextCallback,
+        TextAlignAdapter.AlignmentSelectionCallback {
 
     private static final int RC_LOCATION = 101;
     // ------------------------------------- C O N S T A N T S  ------------------------------------
@@ -113,7 +117,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private Slider slider;
 
     // Text module
-    private View llText, llFont, llColor, llAlpha, ivKeyboard, llColorPickers, llAlphaPicker;
+    private View llText, llFont, llColor, llAlpha, llAlignment, ivKeyboard, llColorPickers, llAlphaPicker;
     private HuePicker huePicker;
     private SaturationPicker saturationPicker;
     private AlphaPicker alphaPicker;
@@ -122,6 +126,10 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private List<WidgetModel> fonts;
     private TextFontAdapter fontAdapter;
     private LinearLayoutManager fontsLayoutManager;
+    private RecyclerView rvAlignments;
+    private List<AlignModel> alignments;
+    private TextAlignAdapter textAlignAdapter;
+    private LinearLayoutManager alignmentsLayoutManager;
 
 
     // -------------------------------------- V A R I A B L E S ------------------------------------
@@ -207,6 +215,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         llFont = findViewById(R.id.ll_text_fonts);
         llColor = findViewById(R.id.ll_text_color);
         llAlpha = findViewById(R.id.ll_text_opacity);
+        llAlignment = findViewById(R.id.ll_text_alignment);
         ivKeyboard = findViewById(R.id.iv_keyboard);
         llColorPickers = findViewById(R.id.ll_color_pickers);
         huePicker = findViewById(R.id.hue_picker);
@@ -214,10 +223,12 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         llAlphaPicker = findViewById(R.id.ll_alpha_pickers);
         alphaPicker = findViewById(R.id.alpha_picker);
         rvFonts = findViewById(R.id.rv_text_font);
+        rvAlignments = findViewById(R.id.rv_text_alignment);
         lines = new ArrayList<>();
         lines.add(findViewById(R.id.line_1));
         lines.add(findViewById(R.id.line_2));
         lines.add(findViewById(R.id.line_3));
+        lines.add(findViewById(R.id.line_4));
 
         //------------------------------  S E T U P  &   L O A D  ----------------------------------
 
@@ -236,6 +247,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         setFontsRecyclerView();
 
+        setAlignmentRecyclerView();
 
         // set listener for slider value change
         setSliderChangeListener();
@@ -341,7 +353,10 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             myCanvas.setSelectionEnabled(true);
 
             // check if no text layer is added already
-//            openAddTextFragment("");
+            final int index = myCanvas.findStickerViewLayer(StickerView.EDITABLE_TEXT);
+            if (index == -1) {
+                openAddTextFragment();
+            }
         });
 
         llFont.setOnClickListener(v -> {
@@ -354,6 +369,10 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         llAlpha.setOnClickListener(v -> {
             selectTextTab(2);
+        });
+
+        llAlignment.setOnClickListener(v -> {
+            selectTextTab(3);
         });
 
         ivKeyboard.setOnClickListener(v -> {
@@ -394,7 +413,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             } else {
                 revertBackToPreviousState(); // revert to memento state
                 myCanvas.setSelectionEnabled(false); // disable selection
-                // todo : unselect all the layers in the canvas
                 showSecondMenu(false);
             }
         });
@@ -413,6 +431,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         myCanvas.setOnLayerClickListener(new MyCanvas.OnLayerClickListener() {
             @Override
             public void onLayerClick(LayerModel layerModel) {
+                Toast.makeText(context, "clicked!", Toast.LENGTH_SHORT).show();
 
                 // If Text Module is opened
                 if (selected == 3
@@ -421,10 +440,15 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                         && layerModel.sticker.stickerType == StickerView.EDITABLE_TEXT
                         && layerModel.textInfo != null) {
 
+                    Toast.makeText(context, "layer clicked :" + layerModel.sticker.text, Toast.LENGTH_SHORT).show();
+
                     textInfo = layerModel.textInfo.copy();
 
                     // set font
                     fontAdapter.setSelectedFont(textInfo.fontIndex);
+
+                    // set text alignment
+                    textAlignAdapter.setSelectedAlignment(textInfo.alignmentIndex);
 
                     // set color pickers
                     huePicker.updatePosition(textInfo.huePosition);
@@ -608,7 +632,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
     private void saveChanges() {
 
-
     }
 
     private void showSecondMenu(boolean shouldShowSecondToolbar) {
@@ -749,6 +772,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 rvFonts.setVisibility(View.VISIBLE);
                 llColorPickers.setVisibility(View.GONE);
                 llAlphaPicker.setVisibility(View.GONE);
+                rvAlignments.setVisibility(View.GONE);
                 animateTopSheetTabLayout(0);
                 break;
 
@@ -756,6 +780,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 rvFonts.setVisibility(View.GONE);
                 llColorPickers.setVisibility(View.VISIBLE);
                 llAlphaPicker.setVisibility(View.GONE);
+                rvAlignments.setVisibility(View.GONE);
                 animateTopSheetTabLayout(1);
                 break;
 
@@ -763,13 +788,22 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 rvFonts.setVisibility(View.GONE);
                 llColorPickers.setVisibility(View.GONE);
                 llAlphaPicker.setVisibility(View.VISIBLE);
+                rvAlignments.setVisibility(View.GONE);
                 animateTopSheetTabLayout(2);
+                break;
+
+            case 3:
+                rvFonts.setVisibility(View.GONE);
+                llColorPickers.setVisibility(View.GONE);
+                llAlphaPicker.setVisibility(View.GONE);
+                rvAlignments.setVisibility(View.VISIBLE);
+                animateTopSheetTabLayout(3);
                 break;
         }
     }
 
     private void animateTopSheetTabLayout(int next) {
-        AnimationHelper animationHelper = new AnimationHelper(80);
+        AnimationHelper animationHelper = new AnimationHelper(200);
         if (next > selectedTextTab) {
             animationHelper.animateSlideToRight(lines, selectedTextTab, next);
         } else if (next < selectedTextTab) {
@@ -825,6 +859,25 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         fontsLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
         rvFonts.setLayoutManager(fontsLayoutManager);
         rvFonts.setAdapter(fontAdapter);
+    }
+
+    private void setAlignmentRecyclerView() {
+        // create list of alignments
+        alignments = new ArrayList<>();
+        alignments.add(new AlignModel(Paint.Align.LEFT, R.drawable.ic_baseline_format_align_left_24, true));
+        alignments.add(new AlignModel(Paint.Align.CENTER, R.drawable.ic_baseline_format_align_center_24));
+        alignments.add(new AlignModel(Paint.Align.RIGHT, R.drawable.ic_baseline_format_align_right_24));
+
+        // also assign the selected Font
+        if (textInfo == null) textInfo = new TextInfo();
+        textInfo.alignmentIndex = 0;
+        textInfo.align = Paint.Align.LEFT;
+
+        // set recyclerView
+        textAlignAdapter = new TextAlignAdapter(context, alignments, this);
+        alignmentsLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
+        rvAlignments.setLayoutManager(alignmentsLayoutManager);
+        rvAlignments.setAdapter(textAlignAdapter);
     }
 
     private void initCanvas() {
@@ -1066,6 +1119,31 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         }
     }
 
+    @Override
+    public void onAlignmentSelected(int position) {
+        // updating the textInfo
+        textInfo.alignmentIndex = position;
+        final Paint.Align align = alignments.get(position).getAlign();
+        textInfo.align = align;
+
+        final LayerModel lastLayer = myCanvas.getLastLayer();
+        if (lastLayer != null
+                && lastLayer.type == LayerModel.STICKER
+                && lastLayer.sticker != null
+                && lastLayer.textInfo != null
+                && lastLayer.sticker.isSelected
+                && lastLayer.sticker.stickerType == StickerView.EDITABLE_TEXT) {
+
+            // update the TextInfo of Layer
+            lastLayer.textInfo.alignmentIndex = position;
+            lastLayer.textInfo.align = align;
+
+            // update the stickerView
+            lastLayer.sticker.textPaint.setTextAlign(align);
+            myCanvas.invalidate();
+        }
+    }
+
     public int getSelectedFont() {
         int index = -1;
         if (fonts != null) {
@@ -1122,14 +1200,26 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         Paint paint = new Paint();
         paint.setTypeface(textInfo.typeface);
         paint.setColor(textInfo.getColor());
+        paint.setTextAlign(textInfo.align);
         paint.setTextSize(60);
         StickerView stickerView = new StickerView(context, text, paint, myCanvas.screenRect, StickerView.EDITABLE_TEXT, 60);
-        myCanvas.addLayer(new LayerModel(stickerView, textInfo));
+        myCanvas.addLayer(new LayerModel(stickerView, textInfo.copy()));
     }
 
     @Override
     public void onTextEdited(String text) {
+        final LayerModel lastLayer = myCanvas.getLastLayer();
+        if (lastLayer != null
+                && lastLayer.type == LayerModel.STICKER
+                && lastLayer.sticker != null
+                && lastLayer.textInfo != null
+                && lastLayer.sticker.isSelected
+                && lastLayer.sticker.stickerType == StickerView.EDITABLE_TEXT) {
 
+            // update the stickerView
+            lastLayer.sticker.text = text;
+            myCanvas.invalidate();
+        }
     }
 
     private void checkLocationPermission() {
@@ -1243,24 +1333,27 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     }
 
     private void saveImageAndSetResult() {
-//        loading.setVisibility(View.VISIBLE);
+        loading.setVisibility(View.VISIBLE);
 
-        // apply the selected Filter
+        myCanvas.setDrawingCacheEnabled(true);
+        myCanvas.buildDrawingCache();
+        final Bitmap editedBitmap = myCanvas.getDrawingCache();
+        myCanvas.setDrawingCacheEnabled(false);
 
+        final Uri uri = FileUtils.insertImage(context, getContentResolver(), editedBitmap, "Edited_Image", "edited image");
+        if (uri == null) {
+            Toast.makeText(context, "inserted uri is null", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-//        final Uri uri = FileUtils.insertImage(context, getContentResolver(), editedBitmap, "Edited_Image", "edited image");
-//        if (uri == null) {
-//            Toast.makeText(context, "inserted uri is null", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//        String path = FileUtils.getPath(context, uri);
-//        Intent intent = new Intent();
-//        intent.putExtra(GalleryConstants.MEDIA_PATH, path);
-//        intent.putExtra(GalleryConstants.MEDIA_URI, uri.toString());
-//        intent.putExtra(GalleryConstants.MEDIA_TYPE, "image");
-//        setResult(RESULT_OK, intent);
-//        finish();
-//        overridePendingTransition(R.anim.activity_enter, R.anim.activity_exit);
+        String path = FileUtils.getPath(context, uri);
+        Intent intent = new Intent();
+        intent.putExtra(GalleryConstants.MEDIA_PATH, path);
+        intent.putExtra(GalleryConstants.MEDIA_URI, uri.toString());
+        intent.putExtra(GalleryConstants.MEDIA_TYPE, "image");
+        setResult(RESULT_OK, intent);
+        finish();
+        overridePendingTransition(R.anim.activity_enter, R.anim.activity_exit);
     }
 
     @Override
@@ -1269,6 +1362,4 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         originalBitmap.recycle();
         blurredBitmap.recycle();
     }
-
-
 }

@@ -127,6 +127,16 @@ public class AlphaPicker extends BasePicker {
 
     }
 
+    @Override
+    public void updatePosition(float position) {
+        super.updatePosition(position);
+        // Alpha has the range of 0 to 255
+        final int value = (int) (position / 100 * 255);
+        final int color = Color.HSVToColor(value, hsv);
+        setThumbPaintColor(color);
+    }
+
+
     public void setAlphaChangeListener(AlphaChangeListener alphaChangeListener) {
         this.alphaChangeListener = alphaChangeListener;
     }

@@ -81,13 +81,12 @@ public class LayerModel {
         switch (type) {
             case STICKER:
                 copy = new LayerModel(new StickerView(sticker));
-                copy.textInfo = textInfo;
+                if (textInfo != null)
+                    copy.textInfo = textInfo.copy();
                 break;
 
             case FILTER:
                 copy = new LayerModel(CanvasUtils.copyBitmap(mainBitmap), mainRect, filterType);
-                if (textInfo != null)
-                    copy.textInfo = textInfo.copy();
                 break;
 
             case PAINT:

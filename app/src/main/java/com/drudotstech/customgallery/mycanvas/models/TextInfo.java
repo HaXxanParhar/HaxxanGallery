@@ -1,6 +1,7 @@
 package com.drudotstech.customgallery.mycanvas.models;
 
 import android.graphics.Color;
+import android.graphics.Paint.Align;
 import android.graphics.Typeface;
 
 /********** Developed by Drudots Technology **********
@@ -20,6 +21,7 @@ public class TextInfo {
      */
     public Typeface typeface;
 
+
     /**
      * The H S V values of the color for the text
      */
@@ -35,12 +37,32 @@ public class TextInfo {
      */
     public float huePosition, saturationPosition, alphaPosition;
 
+    /**
+     * The text alignment
+     */
+    public Align align;
+
+    /**
+     * The text alignment
+     */
+    public int alignmentIndex;
+
     public TextInfo() {
         hsv = new float[]{1, 1, 1};
         alpha = 255;
     }
 
-    public TextInfo(int fontIndex, Typeface typeface, float[] hsv, int alpha, float huePosition, float saturationPosition, float alphaPosition) {
+//    public TextInfo(int fontIndex, Typeface typeface, float[] hsv, int alpha, float huePosition, float saturationPosition, float alphaPosition) {
+//        this.fontIndex = fontIndex;
+//        this.typeface = typeface;
+//        this.hsv = hsv;
+//        this.alpha = alpha;
+//        this.huePosition = huePosition;
+//        this.saturationPosition = saturationPosition;
+//        this.alphaPosition = alphaPosition;
+//    }
+
+    public TextInfo(int fontIndex, Typeface typeface, float[] hsv, int alpha, float huePosition, float saturationPosition, float alphaPosition, Align align, int alignmentIndex) {
         this.fontIndex = fontIndex;
         this.typeface = typeface;
         this.hsv = hsv;
@@ -48,6 +70,8 @@ public class TextInfo {
         this.huePosition = huePosition;
         this.saturationPosition = saturationPosition;
         this.alphaPosition = alphaPosition;
+        this.align = align;
+        this.alignmentIndex = alignmentIndex;
     }
 
     public int getColor() {
@@ -57,6 +81,6 @@ public class TextInfo {
     public TextInfo copy() {
         return new TextInfo(fontIndex, typeface,
                 new float[]{hsv[0], hsv[1], hsv[2]},
-                alpha, huePosition, saturationPosition, alphaPosition);
+                alpha, huePosition, saturationPosition, alphaPosition, align, alignmentIndex);
     }
 }

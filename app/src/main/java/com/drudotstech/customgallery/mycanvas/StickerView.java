@@ -76,6 +76,8 @@ public class StickerView extends View {
 
     private Matrix matrix;
     private float[] matrixValues = new float[9];
+    private boolean showBorders = false;
+
     // endregion
 
     /**
@@ -358,12 +360,20 @@ public class StickerView extends View {
             borderRect.bottom = centerY + h;
 
             canvas.save();
-            canvas.translate(borderRect.left, borderRect.top);
+
+            switch (textPaint.getTextAlign()) {
+                case LEFT:
+                    canvas.translate(borderRect.left, borderRect.top);
+                    break;
+                case CENTER:
+                    canvas.translate(borderRect.centerX(), borderRect.top);
+                    break;
+                case RIGHT:
+                    canvas.translate(borderRect.right, borderRect.top);
+                    break;
+            }
+
             staticLayout.draw(canvas);
-//            else {
-//                // y is the baseline
-//                canvas.drawText(text, borderRect.left, borderRect.bottom, textPaint);
-//            }
             canvas.restore();
 
         }
@@ -416,19 +426,21 @@ public class StickerView extends View {
                 Log.d(TAG, "Left : " + borderRect.left + "  |  Top : " + borderRect.top
                         + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
 
-                Log.d("haxx", "Befor Rect  --> Left : " + borderRect.left + "  |  Top : "
+                Log.d("haxx", "Before Rect  --> Left : " + borderRect.left + "  |  Top : "
                         + borderRect.top + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
             }
         }
 
 
         if (isSelected) {
-            canvas.drawRect(borderRect, redPaint);
+            if (showBorders)
+                canvas.drawRect(borderRect, redPaint);
 //            canvas.drawRect(rect, bluePaint);
             Log.d(TAG, "---------- TEST_BORDER ---------");
             Log.d(TAG, "TEST_BORDER draw : Left : " + borderRect.left + "  |  Top : " + borderRect.top + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
         } else {
-            canvas.drawRect(borderRect, bluePaint);
+            if (showBorders)
+                canvas.drawRect(borderRect, bluePaint);
 //            canvas.drawRect(rect, bluePaint);
 //            canvas.drawRect(borderRect.left, borderRect.top, borderRect.right, borderRect.bottom, borderPaint);
 //            canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, borderPaint);

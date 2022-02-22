@@ -4,15 +4,14 @@
     android:layout_height="@dimen/_48sdp"
     android:layout_marginEnd="@dimen/_8sdp">
 
-    <TextView
-        android:id="@+id/tv_font"
+    <ImageView
+        android:id="@+id/iv_align"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/bg_black_rounded"
-        android:fontFamily="@font/bubble_love"
-        android:gravity="center"
-        android:text="Text"
-        android:textColor="@color/white" />
+        android:fontFamily="@font/metropolis_regular"
+        android:padding="@dimen/_10sdp"
+        android:src="@drawable/ic_baseline_format_align_left_24" />
 
 
 </RelativeLayout>

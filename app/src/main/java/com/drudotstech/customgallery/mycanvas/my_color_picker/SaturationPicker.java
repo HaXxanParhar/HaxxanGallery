@@ -159,6 +159,16 @@ public class SaturationPicker extends BasePicker {
 
     }
 
+    @Override
+    public void updatePosition(float position) {
+        super.updatePosition(position);
+        final float saturation = position / 100;
+        getSVFromPosition(position, hsv);
+        final int color = Color.HSVToColor(hsv);
+        setThumbPaintColor(color);
+    }
+
+
     public float getCurrentValue() {
         return getValueFromPosition(getPosition());
     }
