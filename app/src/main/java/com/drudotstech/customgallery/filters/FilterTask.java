@@ -109,7 +109,6 @@ public class FilterTask extends AsyncTask<Void, Void, BitmapResult> {
         // create allocation for the filter
         Allocation allocationF = Allocation.createFromBitmap(rs, filterBitmap);
 
-
         //Create script from rs file.
         ScriptC_filter1 histEqScript = new ScriptC_filter1(rs);
 
@@ -192,10 +191,10 @@ public class FilterTask extends AsyncTask<Void, Void, BitmapResult> {
 
 
         //Create script from rs file.
-        ScriptC_filter1 histEqScript = new ScriptC_filter1(rs);
+        ScriptC_filter1 scriptC_filter1 = new ScriptC_filter1(rs);
 
         //Call the first kernel.
-        histEqScript.forEach_root(allocationA, allocationF, allocationB);
+        scriptC_filter1.forEach_root(allocationA, allocationF, allocationB);
 
         //Copy script result into bitmap
         allocationB.copyTo(res);
@@ -203,7 +202,7 @@ public class FilterTask extends AsyncTask<Void, Void, BitmapResult> {
         //Destroy everything to free memory
         allocationA.destroy();
         allocationB.destroy();
-        histEqScript.destroy();
+        scriptC_filter1.destroy();
         rs.destroy();
         return res;
     }

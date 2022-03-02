@@ -79,13 +79,15 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_custom_color_picker.xml" value="0.25" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_edit_image.xml" value="0.26481481481481484" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_edit_main.xml" value="0.22" />
-        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_editor.xml" value="0.25" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_editor.xml" value="0.5" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_editor2.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_filter.xml" value="0.25" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_image_display.xml" value="0.2794871794871795" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_more_features.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_my_crop.xml" value="0.2" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_photos_albums.xml" value="0.28400208441896824" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_pictures.xml" value="0.2838541666666667" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_rotate.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_select_media.xml" value="0.26979166666666665" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_stickers.xml" value="0.26481481481481484" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_view_image.xml" value="0.15" />
@@ -100,12 +102,15 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_widget.xml" value="0.26944444444444443" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/fragment_add_text.xml" value="0.2611111111111111" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/fragment_bottom_sticker_emoji_dialog.xml" value="0.26481481481481484" />
-        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/fragment_image_crop.xml" value="0.1638888888888889" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/fragment_image_crop.xml" value="0.25" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/fragment_picture_browser.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/fragment_stickers_bottom_sheet.xml" value="0.33" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/indicator_holder.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/item_aspect_ratio.xml" value="0.16203703703703703" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_adjust_module.xml" value="0.2611111111111111" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_editor.xml" value="0.2838541666666667" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_more_features.xml" value="0.2838541666666667" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_rotate_flip_module.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_slider.xml" value="0.2611111111111111" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_stickers_module.xml" value="0.2611111111111111" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_test.xml" value="0.26944444444444443" />

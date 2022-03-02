@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?><!-- *********** Developed by Drudots Technology ************ -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/_72sdp"
+    android:layout_centerVertical="true"
+    android:background="@color/app_background"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="@dimen/_8sdp"
+    android:visibility="visible"
+    android:weightSum="3">
+
+    <LinearLayout
+        android:id="@+id/ll_flip_horizontal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingVertical="@dimen/_12sdp">
+
+        <ImageView
+            android:layout_width="@dimen/_20sdp"
+            android:layout_height="@dimen/_20sdp"
+            android:src="@drawable/ic_flip"
+            app:tint="@color/white" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:ellipsize="marquee"
+            android:fontFamily="@font/metropolis_regular"
+            android:gravity="center"
+            android:text="Flip Horizontal"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_9ssp" />
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_flip_vertical"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingVertical="@dimen/_12sdp">
+
+        <ImageView
+            android:layout_width="@dimen/_20sdp"
+            android:layout_height="@dimen/_20sdp"
+            android:rotation="90"
+            android:src="@drawable/ic_flip"
+            app:tint="@color/white" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:ellipsize="marquee"
+            android:fontFamily="@font/metropolis_regular"
+            android:gravity="center"
+            android:text="Flip Vertical"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_9ssp" />
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_rotate_image"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingVertical="@dimen/_12sdp">
+
+        <ImageView
+            android:layout_width="@dimen/_18sdp"
+            android:layout_height="@dimen/_18sdp"
+            android:src="@drawable/ic_rotate"
+            app:tint="@color/white" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:ellipsize="marquee"
+            android:fontFamily="@font/metropolis_regular"
+            android:gravity="center"
+            android:text="Rotate"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_9ssp" />
+
+
+    </LinearLayout>
+
+
+</LinearLayout>

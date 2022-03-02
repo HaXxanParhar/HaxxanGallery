@@ -82,14 +82,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @SuppressLint("SetTextI18n")
-public class EditorActivity extends BaseActivity implements FilterAdapter.FilterSelectionCallback,
+public class EditorActivity3 extends BaseActivity implements FilterAdapter.FilterSelectionCallback,
         BlurBitmapCallback, SelectStickerCallback, FilterTask.ApplyFilterCallback, SelectWidgetCallback,
         SelectEmojiCallback, TextFontAdapter.FontSelectionCallback, AddTextFragment.AddTextCallback,
         TextAlignAdapter.AlignmentSelectionCallback {
 
     private static final int RC_LOCATION = 101;
     // ------------------------------------- C O N S T A N T S  ------------------------------------
-    private final Context context = EditorActivity.this;
+    private final Context context = EditorActivity3.this;
     public Bitmap originalBitmap;
     public Bitmap blurredBitmap;
 
@@ -162,8 +162,8 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private float brightness = 50;
     private float contrast = 50;
     private float saturation = 50;
-    private float hue = 50;
-    private Menu selected = Menu.NONE; // 0 , 1, 2, 3, 4 -> for bottom options
+    private float warmth = 50;
+    private int selected = -1; // 0 , 1, 2, 3, 4 -> for bottom options
 
     // to only scroll once per scrolling
     private boolean scrolled = false;
@@ -299,7 +299,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         // ------------------- Filter -----------------------
         ivFilter.setOnClickListener(view -> {
-            selected = Menu.FILTERS;
+            selected = 0;
             showSecondMenu(true);
             saveCurrentState();
             applyFilter(selectedFilterPosition);
@@ -307,7 +307,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         // ------------------- Adjust -----------------------
         ivAdjust.setOnClickListener(view -> {
-            selected = Menu.ADJUST;
+            selected = 1;
             showSecondMenu(true);
 
             // add the paint layer if not already added
@@ -318,7 +318,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         });
 
         llBrightness.setOnClickListener(view -> {
-            selected = Menu.BRIGHTNESS;
+            selected = 4;
             // save the current paint layer
             paintLayerMemento = myCanvas.getPaintLayer();
 
@@ -326,21 +326,21 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         });
 
         llContrast.setOnClickListener(view -> {
-            selected = Menu.CONTRAST;
+            selected = 5;
             showSecondMenu(true);
             // save the current paint layer
             paintLayerMemento = myCanvas.getPaintLayer();
         });
 
         llSaturation.setOnClickListener(view -> {
-            selected = Menu.SATURATION;
+            selected = 6;
             showSecondMenu(true);
             // save the current paint layer
             paintLayerMemento = myCanvas.getPaintLayer();
         });
 
         llWarmth.setOnClickListener(view -> {
-            selected = Menu.HUE;
+            selected = 7;
             showSecondMenu(true);
             // save the current paint layer
             paintLayerMemento = myCanvas.getPaintLayer();
@@ -349,7 +349,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         // --------------- Stickers -----------------------
         ivStickers.setOnClickListener(view -> {
-            selected = Menu.STICKERS;
+            selected = 2;
             showSecondMenu(true);
             saveCurrentState();
 //            myCanvas.setSelectionEnabled(true);
@@ -373,7 +373,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         // --------------- Text Module -----------------------
         ivText.setOnClickListener(v -> {
-            selected = Menu.ADD_TEXT;
+            selected = 3;
             showSecondMenu(true);
             saveCurrentState();
 //            myCanvas.setSelectionEnabled(true);
@@ -420,8 +420,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         llRotate.setOnClickListener(v -> {
             drawer.closeDrawer(GravityCompat.END);
-            selected = Menu.ROTATE_FLIP;
-            showSecondMenu(true);
+//            showSecondMenu();
         });
 
 
@@ -431,10 +430,10 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
             // hide the main menus
             switch (selected) {
-                case FILTERS:
-                case ADJUST:
-                case STICKERS:
-                case ADD_TEXT:
+                case 0:
+                case 1:
+                case 2:
+                case 3:
                     showSecondMenu(false);
                     break;
             }
@@ -442,10 +441,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 //            myCanvas.setSelectionEnabled(false); // disable selection
 
             // selected is within the adjust menu range
-            if (selected == Menu.BRIGHTNESS
-                    || selected == Menu.CONTRAST
-                    || selected == Menu.SATURATION
-                    || selected == Menu.HUE) {
+            if (selected >= 4 && selected <= 7) {
                 // update the adjust memento
                 paintLayerMemento = myCanvas.getPaintLayer();
                 showSecondMenu(false);
@@ -454,10 +450,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         // close without applying changes
         ivClose.setOnClickListener(view -> {
-            if (selected == Menu.BRIGHTNESS
-                    || selected == Menu.CONTRAST
-                    || selected == Menu.SATURATION
-                    || selected == Menu.HUE) { // Slider of adjust options are opened, so don't revert
+            if (selected >= 4 && selected <= 7) { // Slider of adjust options are opened, so don't revert
                 showSecondMenu(false);
                 // revert back to the adjust memento
                 if (paintLayerMemento != null)
@@ -519,7 +512,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
                             blurredBitmap = originalBitmap.copy(originalBitmap.getConfig(), true);
                             blurredBitmap = CanvasUtils.getScreenFillBitmap(context, blurredBitmap);
-                            new BlurTask(context, blurredBitmap, 32, EditorActivity.this).execute();
+                            new BlurTask(context, blurredBitmap, 32, EditorActivity3.this).execute();
                         }
                     });
         } catch (Exception e) {
@@ -537,7 +530,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 Toast.makeText(context, "clicked!", Toast.LENGTH_SHORT).show();
 
                 // If Text Module is opened
-                if (selected == Menu.ADD_TEXT
+                if (selected == 3
                         && layerModel.type == LayerModel.STICKER
                         && layerModel.sticker != null
                         && layerModel.sticker.stickerType == StickerView.EDITABLE_TEXT
@@ -651,28 +644,28 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
             // update the toolbar title
             switch (selected) {
-                case FILTERS:
+                case 0:
                     tvToolbarName.setText("Filters");
                     animationHelper.moveFromBottomToTop(rvFilters, 66f);
                     // show the second action bar
                     animationHelper.moveFromTopToBottom(secondToolbar, 48f);
                     break;
 
-                case ADJUST:
+                case 1:
                     tvToolbarName.setText("Adjust");
                     animationHelper.moveFromBottomToTop(llAdjust, 66f);
                     // show the second action bar
                     animationHelper.moveFromTopToBottom(secondToolbar, 48f);
                     break;
 
-                case STICKERS:
+                case 2:
                     tvToolbarName.setText("Stickers");
                     animationHelper.moveFromBottomToTop(llStickers, 66f);
                     // show the second action bar
                     animationHelper.moveFromTopToBottom(secondToolbar, 48f);
                     break;
 
-                case ADD_TEXT:
+                case 3:
                     tvToolbarName.setText("Text");
                     // show the second action bar
                     animationHelper.moveFromTopToBottom(secondToolbar, 48f);
@@ -680,45 +673,36 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     animationHelper.moveFromBottomToTop(llText, 200f);
                     // make selection from the Text Tab
                     selectTextTab(selectedTextTab);
+
                     break;
 
-                //  --------------- sub menus ------------------
-                case BRIGHTNESS:
+                ///  --------- sub menus ------------------
+                case 4:
                     tvToolbarName.setText("Brightness");
                     slider.setValue((int) brightness);
                     tvSlider.setText(((int) brightness) + "");
                     showSlider(true);
                     break;
 
-                case CONTRAST:
+                case 5:
                     tvToolbarName.setText("Contrast");
                     slider.setValue((int) contrast);
                     tvSlider.setText(((int) contrast) + "");
                     showSlider(true);
                     break;
 
-                case SATURATION:
+                case 6:
                     tvToolbarName.setText("Saturation");
                     slider.setValue((int) saturation);
                     tvSlider.setText(((int) saturation) + "");
                     showSlider(true);
                     break;
 
-                case HUE:
+                case 7:
                     tvToolbarName.setText("Warmth");
-                    slider.setValue((int) hue);
-                    tvSlider.setText(((int) hue) + "");
+                    slider.setValue((int) warmth);
+                    tvSlider.setText(((int) warmth) + "");
                     showSlider(true);
-                    break;
-
-
-                // -------------------- Drawer Menus ----------------------
-                case ROTATE_FLIP:
-                    tvToolbarName.setText("Rotate");
-                    // show the rotate module menus from bottom
-                    animationHelper.moveFromBottomToTop(llRotateModule, 66f);
-                    // show the second action bar
-                    animationHelper.moveFromTopToBottom(secondToolbar, 48f);
                     break;
             }
         }
@@ -727,55 +711,48 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         else {
 
             switch (selected) {
-                case FILTERS:
+                case 0:
+                    tvToolbarName.setText("Filters");
                     animationHelper.moveToBottom(rvFilters, 100f);
                     // hide the second action bar
                     animationHelper.moveToTop(secondToolbar, 48f);
-                    selected = Menu.NONE;
+                    selected = -1;
 
                     break;
-                case ADJUST:
+                case 1:
+                    tvToolbarName.setText("Adjust");
                     animationHelper.moveToBottom(llAdjust, 100f);
                     // hide the second action bar
                     animationHelper.moveToTop(secondToolbar, 48f);
-                    selected = Menu.NONE;
+                    selected = -1;
                     break;
-
-
-                case STICKERS:
+                case 2:
+                    tvToolbarName.setText("Stickers");
                     animationHelper.moveToBottom(llStickers, 100f);
                     // hide the second action bar
                     animationHelper.moveToTop(secondToolbar, 48f);
-                    selected = Menu.NONE;
+                    selected = -1;
                     myCanvas.resetStickerSelection();
                     break;
 
-                case ADD_TEXT:
+                case 3:
+                    tvToolbarName.setText("Text");
                     // hide the bottom view as well
                     animationHelper.moveToBottom(llText, 200f);
                     // hide the second action bar
                     animationHelper.moveToTop(secondToolbar, 48f);
-                    selected = Menu.NONE;
+                    selected = -1;
                     break;
 
 
                 ///  --------- sub menus ------------------
-                case BRIGHTNESS:
-                case CONTRAST:
-                case SATURATION:
-                case HUE:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
                     tvToolbarName.setText("Adjust");
                     showSlider(false);
-                    selected = Menu.ADJUST;
-                    break;
-
-                // -------------------- Drawer Menus ----------------------
-                case ROTATE_FLIP:
-                    // hide the rotate menu to bottom
-                    animationHelper.moveToBottom(llRotateModule, 100f);
-                    // hide the second action bar
-                    animationHelper.moveToTop(secondToolbar, 48f);
-                    selected = Menu.NONE;
+                    selected = 1;
                     break;
             }
 
@@ -799,12 +776,9 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private void hideMenuOrBack() {
         if (drawer.isDrawerOpen(GravityCompat.END)) {
             drawer.closeDrawer(GravityCompat.END);
-        } else if (selected == Menu.BRIGHTNESS
-                || selected == Menu.CONTRAST
-                || selected == Menu.SATURATION
-                || selected == Menu.HUE) { // more menus are opened, hide them first
+        } else if (selected > 3) { // more menus are opened, hide them first
             showSecondMenu(false);
-        } else if (selected != Menu.NONE) {
+        } else if (selected != -1) {
             revertBackToPreviousState();
             showSecondMenu(false);
             // todo : unselect all the layers of the canvas
@@ -822,7 +796,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         //for popup animation
         alertDialog.getWindow().getAttributes().windowAnimations = R.style.PopupAnimation;
         //transparent background
-        alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         alertDialog.show();
 
         TextView tvCancel, tvYes, tvMessage, tvTitle;
@@ -980,28 +954,28 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             @Override
             public void onValueChange(@NonNull Slider slider, float value, boolean fromUser) {
                 switch (selected) {
-                    case BRIGHTNESS:
+                    case 4:
                         brightness = value;
                         tvSlider.setText(((int) brightness) + "");
                         myCanvas.adjustColor(brightness, LayerModel.BRIGHTNESS);
                         break;
 
-                    case CONTRAST:
+                    case 5:
                         contrast = value;
                         tvSlider.setText(((int) contrast) + "");
                         myCanvas.adjustColor(contrast, LayerModel.CONTRAST);
                         break;
 
-                    case SATURATION:
+                    case 6:
                         saturation = value;
                         tvSlider.setText(((int) saturation) + "");
                         myCanvas.adjustColor(saturation, LayerModel.SATURATION);
                         break;
 
-                    case HUE:
-                        hue = value;
-                        tvSlider.setText(((int) hue) + "");
-                        myCanvas.adjustColor(hue, LayerModel.WARMTH);
+                    case 7:
+                        warmth = value;
+                        tvSlider.setText(((int) warmth) + "");
+                        myCanvas.adjustColor(warmth, LayerModel.WARMTH);
                         break;
                 }
 
@@ -1011,10 +985,10 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
     private void checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             getDeviceLocation();
         } else {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, RC_LOCATION);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, RC_LOCATION);
         }
     }
 
@@ -1053,13 +1027,13 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                         if (location != null) {
                             final String address = MyUtils.getAddress(context, location.getLatitude(), location.getLongitude());
                             final String shortAddress = MyUtils.getCityCountry(context, location.getLatitude(), location.getLongitude());
-                            EditorActivity.this.openBottomSheet(address, shortAddress);
+                            EditorActivity3.this.openBottomSheet(address, shortAddress);
                         } else {
-                            EditorActivity.this.openBottomSheet(null, null);
+                            EditorActivity3.this.openBottomSheet(null, null);
                         }
                     } else {
                         Toast.makeText(context, "unable to get the location", Toast.LENGTH_SHORT).show();
-                        EditorActivity.this.openBottomSheet(null, null);
+                        EditorActivity3.this.openBottomSheet(null, null);
                     }
                 }
             });

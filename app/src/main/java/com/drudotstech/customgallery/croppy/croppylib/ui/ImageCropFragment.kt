@@ -3,6 +3,7 @@ package com.drudotstech.customgallery.croppy.croppylib.ui
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -75,6 +76,7 @@ class ImageCropFragment : Fragment(), SelectAspectRatioCallback, BlurBitmapCallb
         }
 
         binding.tvNext.setOnClickListener {
+            binding.rlLoading.visibility = VISIBLE;
             onApplyClicked?.invoke(binding.cropView.getCroppedData())
         }
 

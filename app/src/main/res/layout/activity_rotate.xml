@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".RotateActivity">
+
+    <RelativeLayout
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_44sdp"
+        android:background="@color/app_background">
+
+        <RelativeLayout
+            android:id="@+id/main_action_bar"
+            android:layout_width="match_parent"
+            android:layout_height="?actionBarSize"
+            android:elevation="@dimen/_2sdp"
+            android:visibility="visible"
+            tools:targetApi="lollipop">
+
+            <ImageView
+                android:id="@+id/iv_back"
+                android:layout_width="@dimen/_40sdp"
+                android:layout_height="match_parent"
+                android:layout_centerVertical="true"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="@dimen/_10sdp"
+                android:src="@drawable/ic_baseline_arrow_back_24"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/tv_album"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_centerInParent="true"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/metropolis_semi_bold"
+                android:gravity="center"
+                android:text="Edit Image"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_12ssp" />
+
+            <TextView
+                android:id="@+id/tv_next"
+                android:layout_width="@dimen/_64sdp"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/metropolis_medium"
+                android:gravity="center"
+                android:text="Save"
+                android:textColor="@color/app_color"
+                android:textSize="@dimen/_11ssp" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/second_action_bar"
+            android:layout_width="match_parent"
+            android:layout_height="?actionBarSize"
+            android:background="@color/app_background"
+            android:elevation="@dimen/_2sdp"
+            android:visibility="gone"
+            tools:targetApi="lollipop">
+
+            <ImageView
+                android:id="@+id/iv_close"
+                android:layout_width="@dimen/_40sdp"
+                android:layout_height="match_parent"
+                android:layout_centerVertical="true"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="@dimen/_10sdp"
+                android:src="@drawable/ic_baseline_close_24"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/tv_actionbar_name"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_centerInParent="true"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/metropolis_semi_bold"
+                android:gravity="center"
+                android:text="Filter"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_12ssp" />
+
+            <TextView
+                android:id="@+id/tv_done"
+                android:layout_width="@dimen/_64sdp"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:drawableStart="@drawable/ic_check"
+                android:drawableTint="@color/white"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/metropolis_medium"
+                android:gravity="center"
+                android:text="Done"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_11ssp" />
+
+        </RelativeLayout>
+
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/iv_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/ll_options"
+        android:layout_below="@id/toolbar" />
+
+    <LinearLayout
+        android:id="@+id/ll_options"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerVertical="true"
+        android:background="@color/app_background"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="@dimen/_8sdp"
+        android:visibility="visible"
+        android:weightSum="3">
+
+        <LinearLayout
+            android:id="@+id/ll_flip_horizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingVertical="@dimen/_12sdp">
+
+            <ImageView
+                android:layout_width="@dimen/_24sdp"
+                android:layout_height="@dimen/_24sdp"
+                android:src="@drawable/ic_flip"
+                app:tint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/metropolis_regular"
+                android:gravity="center"
+                android:text="Flip Horizontal"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_9ssp" />
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_flip_vertical"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingVertical="@dimen/_12sdp">
+
+            <ImageView
+                android:layout_width="@dimen/_24sdp"
+                android:layout_height="@dimen/_24sdp"
+                android:rotation="90"
+                android:src="@drawable/ic_flip"
+                app:tint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/metropolis_regular"
+                android:gravity="center"
+                android:text="Flip Vertical"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_9ssp" />
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_rotate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingVertical="@dimen/_12sdp">
+
+            <ImageView
+                android:layout_width="@dimen/_22sdp"
+                android:layout_height="@dimen/_22sdp"
+                android:src="@drawable/ic_rotate"
+                app:tint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/metropolis_regular"
+                android:gravity="center"
+                android:text="Rotate"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_9ssp" />
+
+
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+    <include layout="@layout/loading_main" />
+
+
+</RelativeLayout>

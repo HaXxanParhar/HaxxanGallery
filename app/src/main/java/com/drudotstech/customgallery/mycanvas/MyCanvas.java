@@ -42,7 +42,7 @@ public class MyCanvas extends View {
     public RectF screenRect; // rect of the canvas
     private List<Float> listX = new ArrayList<>();
     private List<Float> listY = new ArrayList<>();
-    private boolean isSelectionEnabled = false;
+    private boolean isSelectionEnabled = true;
 
 
     private Bitmap deleteBitmap; // delete bitmap

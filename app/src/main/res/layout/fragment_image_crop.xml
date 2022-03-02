@@ -108,11 +108,11 @@
                     android:background="#66292828" />
 
                 <com.wang.avi.AVLoadingIndicatorView
-                    android:layout_width="@dimen/_40sdp"
-                    android:layout_height="@dimen/_40sdp"
+                    android:layout_width="@dimen/_24sdp"
+                    android:layout_height="@dimen/_24sdp"
                     android:layout_centerInParent="true"
                     app:indicatorColor="@color/white"
-                    app:indicatorName="TriangleSkewSpinIndicator" />
+                    app:indicatorName="LineSpinFadeLoaderIndicator" />
 
 
             </RelativeLayout>

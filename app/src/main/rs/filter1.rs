@@ -21,6 +21,7 @@ uchar4 __attribute__((kernel)) root(uchar4 original, uchar4 filter, uint32_t x, 
     float4 originalColor = rsUnpackColor8888(original);
     float4 filterColor = rsUnpackColor8888(filter);
 
+
     float R = boundColor(originalColor.r + filterColor.r);
     float G = boundColor(originalColor.g + filterColor.g);
     float B = boundColor(originalColor.b + filterColor.b);

@@ -18,7 +18,6 @@
         tools:ignore="ScopedStorage" />
 
     <application
-        android:name=".editor.photoediting.PhotoApp"
         android:allowBackup="true"
         android:debuggable="true"
         android:icon="@mipmap/ic_launcher"
@@ -28,45 +27,37 @@
         android:theme="@style/Theme.CustomGallery"
         tools:ignore="HardcodedDebugMode">
         <activity
+            android:name=".RotateActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".MoreFeaturesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".mycanvas.CustomColorPickerActivity"
-            android:exported="true">
-            <!--            <intent-filter>-->
-            <!--                <action android:name="android.intent.action.MAIN" />-->
-
-            <!--                <category android:name="android.intent.category.LAUNCHER" />-->
-            <!--            </intent-filter>-->
-        </activity>
-        <activity android:name=".mycanvas.EditorActivity2" />
-        <activity android:name=".mycanvas.EditorActivity" />
-        <activity
-            android:name=".StickersActivity"
-            android:exported="false" />
-        <activity
-            android:name=".editor.photoediting.EditImageActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
+
+
             <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
             <!-- </intent-filter> -->
         </activity>
         <activity
-            android:name=".EditMainActivity"
-            android:exported="false" />
+            android:name=".mycanvas.EditorActivity2"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".mycanvas.EditorActivity"
+            android:screenOrientation="portrait" />
+
         <activity
             android:name=".filters.HistoActivity"
-            android:exported="true" />
-        <activity
-            android:name=".filters.FilterActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait" />
 
-            <!-- <intent-filter> -->
-            <!-- <action android:name="android.intent.action.MAIN" /> -->
-
-
-            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
-            <!-- </intent-filter> -->
-        </activity>
         <activity
             android:name=".croppy.croppylib.main.CroppyActivity"
             android:screenOrientation="portrait" />

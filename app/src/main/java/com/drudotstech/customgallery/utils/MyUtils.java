@@ -114,6 +114,11 @@ public class MyUtils {
         return displayMetrics.widthPixels;
     }
 
+    public static int getScreenHeight(Context context) {
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        return displayMetrics.heightPixels;
+    }
+
     public static void vibrate(Context context, int milliseconds) {
         Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

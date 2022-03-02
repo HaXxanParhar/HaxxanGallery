@@ -207,10 +207,10 @@ public class FilterUtils {
 
     private static Bitmap deepBlue(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
         //Create script from rs file.
-        ScriptC_blue histEqScript = new ScriptC_blue(rs);
+        ScriptC_blue scriptC_blue = new ScriptC_blue(rs);
 
         //Call the first kernel.
-        histEqScript.forEach_root(allocationA, allocationB);
+        scriptC_blue.forEach_root(allocationA, allocationB);
 
         //Copy script result into bitmap
         allocationB.copyTo(res);
@@ -218,7 +218,7 @@ public class FilterUtils {
         //Destroy everything to free memory
         allocationA.destroy();
         allocationB.destroy();
-        histEqScript.destroy();
+        scriptC_blue.destroy();
         rs.destroy();
         return res;
     }
