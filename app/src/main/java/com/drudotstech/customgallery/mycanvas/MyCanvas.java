@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
@@ -260,7 +261,6 @@ public class MyCanvas extends View {
                         //Lay the view out with the known dimensions
                         layer.sticker.layout(layer.sticker.left, layer.sticker.top,
                                 layer.sticker.right, layer.sticker.bottom);
-
 
                         //Translate the canvas so the view is drawn at the proper coordinates
                         canvas.save();
@@ -705,6 +705,57 @@ public class MyCanvas extends View {
     // endregion
 
     // region  --> E F F E C T S <--
+
+    public void rotateImage(int rotation) {
+        if (layers != null && !layers.isEmpty() && layers.get(0).type == LayerModel.FILTER) {
+            Matrix matrix = new Matrix();
+            matrix.postRotate(rotation);
+            final LayerModel layer = layers.get(0);
+            Bitmap temp = layer.mainBitmap.copy(layer.mainBitmap.getConfig(), true);
+            layer.mainBitmap = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), matrix, false);
+            invalidate();
+        }
+    }
+
+    public void flipHorizontal() {
+        if (layers != null && !layers.isEmpty() && layers.get(0).type == LayerModel.FILTER) {
+            Matrix matrix = new Matrix();
+            final LayerModel layer = layers.get(0);
+
+            Bitmap temp = layer.mainBitmap.copy(layer.mainBitmap.getConfig(), true);
+            matrix.postScale(-1, 1, temp.getWidth() / 2.0f, temp.getHeight() / 2.0f);
+
+            layer.mainBitmap = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), matrix, false);
+            invalidate();
+        }
+    }
+
+    public void flipVertical() {
+        if (layers != null && !layers.isEmpty() && layers.get(0).type == LayerModel.FILTER) {
+            Matrix matrix = new Matrix();
+            final LayerModel layer = layers.get(0);
+
+            Bitmap temp = layer.mainBitmap.copy(layer.mainBitmap.getConfig(), true);
+            matrix.postScale(1, -1, temp.getWidth() / 2.0f, temp.getHeight() / 2.0f);
+
+            layer.mainBitmap = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), matrix, false);
+            invalidate();
+        }
+    }
+
+    public void blur(Bitmap original, int value) {
+        if (layers != null && !layers.isEmpty() && layers.get(0).type == LayerModel.FILTER) {
+            Matrix matrix = new Matrix();
+            final LayerModel layer = layers.get(0);
+
+            Bitmap temp = layer.mainBitmap.copy(layer.mainBitmap.getConfig(), true);
+            matrix.postScale(1, -1, temp.getWidth() / 2.0f, temp.getHeight() / 2.0f);
+
+            layer.mainBitmap = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), matrix, false);
+            invalidate();
+        }
+    }
+
 
     public void adjustColor(float value, int type) {
         //get the paint layer & change the saturation value

@@ -422,7 +422,14 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             drawer.closeDrawer(GravityCompat.END);
             selected = Menu.ROTATE_FLIP;
             showSecondMenu(true);
+            saveCurrentState();
         });
+
+        llRotateImage.setOnClickListener(v -> myCanvas.rotateImage(90));
+
+        llFlipHorizontal.setOnClickListener(v -> myCanvas.flipHorizontal());
+
+        llFlipVertical.setOnClickListener(v -> myCanvas.flipVertical());
 
 
         // --------------- Others -----------------------
@@ -435,6 +442,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 case ADJUST:
                 case STICKERS:
                 case ADD_TEXT:
+                case ROTATE_FLIP:
                     showSecondMenu(false);
                     break;
             }
@@ -454,15 +462,18 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         // close without applying changes
         ivClose.setOnClickListener(view -> {
+
+            // Slider of adjust options are opened, so don't revert
             if (selected == Menu.BRIGHTNESS
                     || selected == Menu.CONTRAST
                     || selected == Menu.SATURATION
-                    || selected == Menu.HUE) { // Slider of adjust options are opened, so don't revert
+                    || selected == Menu.HUE) {
                 showSecondMenu(false);
+
                 // revert back to the adjust memento
                 if (paintLayerMemento != null)
                     myCanvas.setPaintLayer(paintLayerMemento);
-                // also reset the
+
             } else {
                 revertBackToPreviousState(); // revert to memento state
 //                myCanvas.setSelectionEnabled(false); // disable selection
@@ -626,15 +637,8 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     }
 
     private void revertBackToPreviousState() {
-
         if (memento != null)
             myCanvas.updateFromCanvasState(memento);
-
-        // resetting image filter view
-//        brightness = 50;
-//        contrast = 50;
-//        saturation = 50;
-//        warmth = 50;
     }
 
 
@@ -705,7 +709,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     break;
 
                 case HUE:
-                    tvToolbarName.setText("Warmth");
+                    tvToolbarName.setText("Hue");
                     slider.setValue((int) hue);
                     tvSlider.setText(((int) hue) + "");
                     showSlider(true);

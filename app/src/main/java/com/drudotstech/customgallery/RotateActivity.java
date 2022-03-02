@@ -1,7 +1,5 @@
 package com.drudotstech.customgallery;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -47,14 +45,17 @@ public class RotateActivity extends BaseActivity {
         getBitmap();
 
         llRotate.setOnClickListener(v -> {
-            llRotate.setEnabled(false);
-            imageView.animate().rotationBy(90).setDuration(100).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    super.onAnimationEnd(animation);
-                    llRotate.setEnabled(true);
-                }
-            });
+            matrix.postRotate(90);
+            Bitmap temp = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+            imageView.setImageBitmap(temp);
+//            llRotate.setEnabled(false);
+//            imageView.animate().rotationBy(90).setDuration(100).setListener(new AnimatorListenerAdapter() {
+//                @Override
+//                public void onAnimationEnd(Animator animation) {
+//                    super.onAnimationEnd(animation);
+//                    llRotate.setEnabled(true);
+//                }
+//            });
         });
 
         llFilpHorizontal.setOnClickListener(v -> {
