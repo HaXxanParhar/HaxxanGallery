@@ -7,11 +7,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.os.Build;
 import android.util.AttributeSet;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 
 import com.drudotstech.customgallery.R;
 
@@ -42,6 +40,16 @@ public class SaturationPicker extends BasePicker {
      * Paint object for drawing
      */
     private float baseColor;
+
+    /**
+     * connect HuePicker get the color value from both Hue (H) and Saturation (SV)
+     */
+    private HuePicker huePicker;
+
+    /**
+     * connect AlphaPicker get the color value from color (HSV) and Alpha
+     */
+    private AlphaPicker alphaPicker;
 
 
     public SaturationPicker(Context context) {
@@ -80,7 +88,7 @@ public class SaturationPicker extends BasePicker {
 //        drawPicker();
     }
 
-    public void updateSaturationColor(float newBaseColor) {
+    public void updateBaseColor(float newBaseColor) {
         this.baseColor = newBaseColor;
         hsv = new float[]{baseColor, getSaturationFromPosition(getPosition()), getValueFromPosition(getPosition())};
         setThumbPaintColor(Color.HSVToColor(hsv));
@@ -111,11 +119,12 @@ public class SaturationPicker extends BasePicker {
         // bound the position to 0-100
         position = Math.max(0, Math.min(100, position));
 
+        // for 0-50 it is saturation (S in HSV)
         if (position <= 50) {
             float saturation = getSaturationFromPosition(position);
             hsv[1] = saturation;
             hsv[2] = 1;
-        } else {
+        } else {        // for 50-100 it is value (V in HSV)
             float value = getValueFromPosition(position);
             hsv[1] = 1;
             hsv[2] = value;
@@ -144,20 +153,34 @@ public class SaturationPicker extends BasePicker {
 
     @Override
     protected void onPositionChanged(float position) {
-        final float saturation = position / 100;
         getSVFromPosition(position, hsv);
-        final int color = Color.HSVToColor(hsv);
+
+        // update thumbColor
+        int color = Color.HSVToColor(hsv);
         setThumbPaintColor(color);
 
+        // if huePicker is not null, set the HueValue
+        if (huePicker != null)
+            hsv[0] = huePicker.getCurrentHue();
+
+        // if alphaPicker is not null, set alpha value from alpha picker
+        if (alphaPicker != null) {
+            final int alpha = alphaPicker.getCurrentAlpha();
+            // the color value to be returned by the listener
+            color = Color.HSVToColor(alpha, hsv);
+            // update alpha picker
+            alphaPicker.updateBaseColor(color);
+        }
+
+
+        // SV values
+        final float saturation = getCurrentSaturation();
+        final float value = getCurrentValue();
+
         if (saturationChangeListener != null)
-            saturationChangeListener.onSaturationChanged(color, saturation);
+            saturationChangeListener.onSaturationChanged(color, saturation, value);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    @Override
-    protected void OnPickerChange(float x, float y) {
-
-    }
 
     @Override
     public void updatePosition(float position) {
@@ -166,6 +189,10 @@ public class SaturationPicker extends BasePicker {
         getSVFromPosition(position, hsv);
         final int color = Color.HSVToColor(hsv);
         setThumbPaintColor(color);
+    }
+
+    public void connectHuePicker(HuePicker huePicker) {
+        this.huePicker = huePicker;
     }
 
 
@@ -181,7 +208,16 @@ public class SaturationPicker extends BasePicker {
         this.saturationChangeListener = saturationChangeListener;
     }
 
+    public void connectAlphaPicker(AlphaPicker alphaPicker) {
+        this.alphaPicker = alphaPicker;
+    }
+
+    public void connect(HuePicker huePicker, AlphaPicker alphaPicker) {
+        this.huePicker = huePicker;
+        this.alphaPicker = alphaPicker;
+    }
+
     public interface SaturationChangeListener {
-        void onSaturationChanged(int color, float saturation);
+        void onSaturationChanged(int color, float saturation, float value);
     }
 }

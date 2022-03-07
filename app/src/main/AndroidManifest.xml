@@ -27,6 +27,11 @@
         android:theme="@style/Theme.CustomGallery"
         tools:ignore="HardcodedDebugMode">
         <activity
+            android:name=".TestDrawViewActivity"
+            android:exported="true">
+
+        </activity>
+        <activity
             android:name=".RotateActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
@@ -52,12 +57,10 @@
         <activity
             android:name=".mycanvas.EditorActivity"
             android:screenOrientation="portrait" />
-
         <activity
             android:name=".filters.HistoActivity"
             android:exported="true"
             android:screenOrientation="portrait" />
-
         <activity
             android:name=".croppy.croppylib.main.CroppyActivity"
             android:screenOrientation="portrait" />

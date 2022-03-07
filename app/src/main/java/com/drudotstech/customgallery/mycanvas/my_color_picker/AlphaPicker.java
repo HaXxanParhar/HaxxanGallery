@@ -5,11 +5,9 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.os.Build;
 import android.util.AttributeSet;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 
 import com.drudotstech.customgallery.R;
 
@@ -41,6 +39,15 @@ public class AlphaPicker extends BasePicker {
      */
     private AlphaChangeListener alphaChangeListener;
 
+    /**
+     * connect HuePicker get the color value from both Hue (H) and Saturation (SV)
+     */
+    private HuePicker huePicker;
+
+    /**
+     * connect SaturationPicker to get the color value from both Hue (H) and Saturation (SV)
+     */
+    private SaturationPicker saturationPicker;
 
     public AlphaPicker(Context context) {
         super(context);
@@ -86,7 +93,7 @@ public class AlphaPicker extends BasePicker {
         paint.setAntiAlias(true);
     }
 
-    public void updatePickerHueSaturation(int color) {
+    public void updateBaseColor(int color) {
 
         baseColor = color;
         // convert color to HSV
@@ -97,6 +104,22 @@ public class AlphaPicker extends BasePicker {
         setThumbPaintColor(Color.HSVToColor(alpha, hsv));
         // draw again
         drawPicker();
+    }
+
+    public void updateBaseColor(int color, boolean shouldDraw) {
+
+        baseColor = color;
+        // convert color to HSV
+        Color.colorToHSV(baseColor, hsv);
+        // get alpha according to current position
+        final int alpha = getCurrentAlpha();
+        // update the thumb paint color as well
+        setThumbPaintColor(Color.HSVToColor(alpha, hsv));
+
+        if (shouldDraw) {
+            // draw again
+            drawPicker();
+        }
     }
 
     @Override
@@ -113,18 +136,23 @@ public class AlphaPicker extends BasePicker {
     @Override
     protected void onPositionChanged(float position) {
         // Alpha has the range of 0 to 255
-        final int value = (int) (position / 100 * 255);
-        final int color = Color.HSVToColor(value, hsv);
+        final int alpha = (int) (position / 100 * 255);
+        int color = Color.HSVToColor(alpha, hsv);
         setThumbPaintColor(color);
 
+        // creating color (to return in listener) from values of hue Picker and saturation Picker
+        if (saturationPicker != null) {
+            hsv[1] = saturationPicker.getCurrentSaturation();
+            hsv[2] = saturationPicker.getCurrentValue();
+        }
+
+        if (huePicker != null)
+            hsv[0] = huePicker.getCurrentHue();
+
+        color = Color.HSVToColor(alpha, hsv);
+
         if (alphaChangeListener != null)
-            alphaChangeListener.onValueChanged(color, value);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    @Override
-    protected void OnPickerChange(float x, float y) {
-
+            alphaChangeListener.onValueChanged(color, alpha);
     }
 
     @Override
@@ -148,6 +176,11 @@ public class AlphaPicker extends BasePicker {
     public int getCurrentAlpha() {
         // Alpha has the range of 0 to 255
         return (int) (getPosition() / 100 * 255);
+    }
+
+    public void connect(HuePicker huePicker, SaturationPicker saturationPicker) {
+        this.huePicker = huePicker;
+        this.saturationPicker = saturationPicker;
     }
 
     public interface AlphaChangeListener {

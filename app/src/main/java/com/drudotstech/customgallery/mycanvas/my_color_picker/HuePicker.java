@@ -4,11 +4,9 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.os.Build;
 import android.util.AttributeSet;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +30,21 @@ public class HuePicker extends BasePicker {
      * Integer List of Hue colors
      */
     private List<Integer> colors = null;
+
+    /**
+     * Hue Change Listener
+     */
     private HueChangeListener hueChangeListener;
+
+    /**
+     * connect SaturationPicker to get the color value from both Hue (H) and Saturation (SV)
+     */
+    private SaturationPicker saturationPicker;
+
+    /**
+     * connect AlphaPicker get the color value from color (HSV) and Alpha
+     */
+    private AlphaPicker alphaPicker;
 
 
     public HuePicker(Context context) {
@@ -89,8 +101,29 @@ public class HuePicker extends BasePicker {
     protected void onPositionChanged(float position) {
         final float hue = (position / 100) * 360;
         hsv[0] = hue;
-        final int color = Color.HSVToColor(hsv);
+        hsv[1] = 1;
+        hsv[2] = 1;
+        int color = Color.HSVToColor(hsv);
         setThumbPaintColor(color);
+
+        // creating color from values of saturation Picker and Alpha Picker
+        if (saturationPicker != null) {
+            hsv[1] = saturationPicker.getCurrentSaturation();
+            hsv[2] = saturationPicker.getCurrentValue();
+            // update saturation picker
+            saturationPicker.updateBaseColor(getCurrentHue());
+        }
+
+        int alpha = 255;
+        if (alphaPicker != null) {
+            alpha = alphaPicker.getCurrentAlpha();
+        }
+
+        color = Color.HSVToColor(alpha, hsv);
+        if (alphaPicker != null) {
+            // update the alpha picker
+            alphaPicker.updateBaseColor(color, false);
+        }
 
         if (hueChangeListener != null)
             hueChangeListener.onHueChanged(color, hue);
@@ -105,10 +138,6 @@ public class HuePicker extends BasePicker {
         setThumbPaintColor(color);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    @Override
-    protected void OnPickerChange(float x, float y) {
-    }
 
     public float getCurrentHue() {
         return getHueFromPosition(getPosition());
@@ -120,6 +149,11 @@ public class HuePicker extends BasePicker {
 
     public void setHueChangeListener(HueChangeListener hueChangeListener) {
         this.hueChangeListener = hueChangeListener;
+    }
+
+    public void connect(SaturationPicker saturationPicker, AlphaPicker alphaPicker) {
+        this.saturationPicker = saturationPicker;
+        this.alphaPicker = alphaPicker;
     }
 
     public interface HueChangeListener {

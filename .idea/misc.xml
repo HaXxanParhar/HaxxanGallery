@@ -90,6 +90,7 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_rotate.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_select_media.xml" value="0.26979166666666665" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_stickers.xml" value="0.26481481481481484" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_test_draw_view.xml" value="0.23300555793073963" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_view_image.xml" value="0.15" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/crop_image_activity.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/crop_image_view.xml" value="0.2838541666666667" />
@@ -108,7 +109,8 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/indicator_holder.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/item_aspect_ratio.xml" value="0.16203703703703703" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_adjust_module.xml" value="0.2611111111111111" />
-        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_editor.xml" value="0.2838541666666667" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_draw_module.xml" value="0.33" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_editor.xml" value="0.25" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_more_features.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_rotate_flip_module.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_slider.xml" value="0.2611111111111111" />

@@ -434,13 +434,16 @@ public class StickerView extends View {
 
         if (isSelected) {
             if (showBorders)
-                canvas.drawRect(borderRect, redPaint);
+//                canvas.drawRect(borderRect, redPaint);
+                canvas.drawRoundRect(borderRect, 20, 20, redPaint);
 //            canvas.drawRect(rect, bluePaint);
             Log.d(TAG, "---------- TEST_BORDER ---------");
             Log.d(TAG, "TEST_BORDER draw : Left : " + borderRect.left + "  |  Top : " + borderRect.top + "  |  Right : " + borderRect.right + "  |  Bottom : " + borderRect.bottom);
         } else {
             if (showBorders)
-                canvas.drawRect(borderRect, bluePaint);
+//                canvas.drawRect(borderRect, bluePaint);
+                canvas.drawRoundRect(borderRect, 10, 10, bluePaint);
+
 //            canvas.drawRect(rect, bluePaint);
 //            canvas.drawRect(borderRect.left, borderRect.top, borderRect.right, borderRect.bottom, borderPaint);
 //            canvas.drawRect(rect.left, rect.top, rect.right, rect.bottom, borderPaint);

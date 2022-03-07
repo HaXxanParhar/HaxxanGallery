@@ -2,6 +2,7 @@ package com.drudotstech.customgallery.mycanvas.models;
 
 import android.graphics.Bitmap;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 
 import com.drudotstech.customgallery.filters.FilterType;
@@ -21,6 +22,7 @@ public class LayerModel {
     public static final int SATURATION = 5;
     public static final int CONTRAST = 6;
     public static final int WARMTH = 7;
+    public static final int DRAWING = 8;
 
     public int type;
 
@@ -28,6 +30,7 @@ public class LayerModel {
     public Bitmap mainBitmap;
     public FilterType filterType;
     public RectF mainRect;
+    public int blurAmount;
 
     // when type is Paint
     public Paint paint;
@@ -40,9 +43,18 @@ public class LayerModel {
     public StickerView sticker;
     public TextInfo textInfo;
 
+    // When type is drawing
+    public Path path;
+
     public LayerModel(StickerView sticker) {
         this.type = STICKER;
         this.sticker = sticker;
+    }
+
+    public LayerModel(Paint paint, Path path) {
+        type = DRAWING;
+        this.paint = paint;
+        this.path = path;
     }
 
     public LayerModel(StickerView sticker, TextInfo textInfo) {
@@ -74,6 +86,7 @@ public class LayerModel {
         this.mainBitmap = mainBitmap;
         this.mainRect = rectF;
         this.filterType = filterType;
+        this.blurAmount = 0;
     }
 
     public LayerModel copy() {

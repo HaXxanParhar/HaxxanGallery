@@ -227,15 +227,10 @@ public abstract class BasePicker extends View {
                 invalidate();
                 break;
         }
-
         return true;
     }
 
-
     protected abstract void onPositionChanged(float position);
-
-
-    protected abstract void OnPickerChange(float x, float y);
 
     //  region ------------------------G E T T E R S   &   S E T T E R S-------------------------------
 

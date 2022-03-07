@@ -27,23 +27,23 @@ public class CustomColorPickerActivity extends AppCompatActivity {
         huePicker.setHueChangeListener(new HuePicker.HueChangeListener() {
             @Override
             public void onHueChanged(int color, float hue) {
-                saturationPicker.updateSaturationColor(huePicker.getCurrentHue());
+                saturationPicker.updateBaseColor(huePicker.getCurrentHue());
 
                 int newColor = showColor(huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
                         saturationPicker.getCurrentValue(), alphaPicker.getCurrentAlpha());
 
-                alphaPicker.updatePickerHueSaturation(newColor);
+                alphaPicker.updateBaseColor(newColor);
             }
         });
 
         saturationPicker.setSaturationChangeListener(new SaturationPicker.SaturationChangeListener() {
             @Override
-            public void onSaturationChanged(int color, float saturation) {
+            public void onSaturationChanged(int color, float saturation, float value) {
 
                 int newColor = showColor(huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
                         saturationPicker.getCurrentValue(), alphaPicker.getCurrentAlpha());
 
-                alphaPicker.updatePickerHueSaturation(newColor);
+                alphaPicker.updateBaseColor(newColor);
             }
         });
 

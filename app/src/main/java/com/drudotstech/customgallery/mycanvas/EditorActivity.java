@@ -15,6 +15,8 @@ import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
@@ -25,10 +27,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -65,6 +63,7 @@ import com.drudotstech.customgallery.mycanvas.models.LayerModel;
 import com.drudotstech.customgallery.mycanvas.models.TextInfo;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.AlphaPicker;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.HuePicker;
+import com.drudotstech.customgallery.mycanvas.my_color_picker.NumberPicker;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.SaturationPicker;
 import com.drudotstech.customgallery.utils.AnimationHelper;
 import com.drudotstech.customgallery.utils.FileUtils;
@@ -87,6 +86,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         SelectEmojiCallback, TextFontAdapter.FontSelectionCallback, AddTextFragment.AddTextCallback,
         TextAlignAdapter.AlignmentSelectionCallback {
 
+    // region --> V A R I A B L E S <--
     private static final int RC_LOCATION = 101;
     // ------------------------------------- C O N S T A N T S  ------------------------------------
     private final Context context = EditorActivity.this;
@@ -122,7 +122,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private Slider slider;
 
     // Text module Views
-    private View llText, llFont, llColor, llAlpha, llAlignment, ivKeyboard, llColorPickers, llAlphaPicker;
+    private View llText, llFont, llColor, llAlpha, llAlignment, ivKeyboard, llColorPickers, llAlphaPickers;
     private HuePicker huePicker;
     private SaturationPicker saturationPicker;
     private AlphaPicker alphaPicker;
@@ -140,10 +140,20 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private NavigationView navigationView;
     private DrawerLayout drawer;
     private View ivCloseDrawer;
-    private View llRotate, llWhitener;
+    private View llRotate, llBlur, llBrush, llWhitener;
 
     // Rotate Flip Views
     private View llRotateModule, llRotateImage, llFlipHorizontal, llFlipVertical;
+
+    // Drawing Views
+    private MyBrushView brushView;
+    private View llDrawModule, llBrushSize, llBrushColor, llBrushAlpha, llBrushSizePickers,
+            llBrushColorPickers, llBrushAlphaPickers;
+    private NumberPicker brushSizePicker;
+    private HuePicker brushHuePicker;
+    private SaturationPicker brushSaturationPicker;
+    private AlphaPicker brushAlphaPicker;
+    private List<View> lines2;
 
 
     // -------------------------------------- V A R I A B L E S ------------------------------------
@@ -158,26 +168,18 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private String media;
 
     private int selectedTextTab = 0;
+    private int selectedDrawTab = 0;
 
     private float brightness = 50;
     private float contrast = 50;
     private float saturation = 50;
     private float hue = 50;
+    private int blurAmount = 0;
     private Menu selected = Menu.NONE; // 0 , 1, 2, 3, 4 -> for bottom options
 
     // to only scroll once per scrolling
     private boolean scrolled = false;
-
-
-    // -------------------------------------- L A U N C H E R S ------------------------------------
-    private ActivityResultLauncher<Intent> someLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
-        @Override
-        public void onActivityResult(ActivityResult result) {
-            if (result != null && result.getResultCode() == RESULT_OK) {
-
-            }
-        }
-    });
+    // endregion
 
     @SuppressLint("CheckResult")
     @Override
@@ -185,102 +187,27 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editor);
 
-        //--------------------------------- I N I T   V I E W S ------------------------------------
-        rlBottom = findViewById(R.id.rl_bottom);
-        mainToolbar = findViewById(R.id.main_action_bar);
-        ivBack = findViewById(R.id.iv_back);
-        navigationView = findViewById(R.id.navigation_view_editor);
-        drawer = findViewById(R.id.drawer_layout_editor);
-        ivCloseDrawer = findViewById(R.id.iv_close_drawer);
-
-        tvSave = findViewById(R.id.tv_next);
-        secondToolbar = findViewById(R.id.second_action_bar);
-        secondToolbar.setVisibility(View.GONE);
-        ivClose = findViewById(R.id.iv_close);
-        tvToolbarName = findViewById(R.id.tv_actionbar_name);
-        tvDone = findViewById(R.id.tv_done);
-
-        ivOriginal = findViewById(R.id.iv_original_image);
-        rlCanvas = findViewById(R.id.rl_canvas);
-
-        ivFilter = findViewById(R.id.iv_filter);
-        ivAdjust = findViewById(R.id.iv_adjust);
-        ivStickers = findViewById(R.id.iv_stickers);
-        ivText = findViewById(R.id.iv_text);
-
-        rvFilters = findViewById(R.id.rv_filters);
-        rvFilters.setVisibility(View.GONE);
-
-        llAdjust = findViewById(R.id.ll_adjust);
-        llAdjust.setVisibility(View.GONE);
-        llBrightness = findViewById(R.id.ll_brightness);
-        llContrast = findViewById(R.id.ll_contrast);
-        llSaturation = findViewById(R.id.ll_saturation);
-        llWarmth = findViewById(R.id.ll_warmth);
-        llSlider = findViewById(R.id.rl_slider);
-        tvSlider = findViewById(R.id.tv_slider);
-        slider = findViewById(R.id.slider);
-        loading = findViewById(R.id.rl_loading);
-
-        llStickers = findViewById(R.id.ll_stickers);
-        llStickers.setVisibility(View.GONE);
-        ivAddSticker = findViewById(R.id.iv_sticker);
-        ivAddWidgets = findViewById(R.id.iv_widget);
-        ivAddEmoji = findViewById(R.id.iv_emoji);
-
-        llText = findViewById(R.id.ll_text);
-        llText.setVisibility(View.GONE);
-        llFont = findViewById(R.id.ll_text_fonts);
-        llColor = findViewById(R.id.ll_text_color);
-        llAlpha = findViewById(R.id.ll_text_opacity);
-        llAlignment = findViewById(R.id.ll_text_alignment);
-        ivKeyboard = findViewById(R.id.iv_keyboard);
-        llColorPickers = findViewById(R.id.ll_color_pickers);
-        huePicker = findViewById(R.id.hue_picker);
-        saturationPicker = findViewById(R.id.saturation_picker);
-        llAlphaPicker = findViewById(R.id.ll_alpha_pickers);
-        alphaPicker = findViewById(R.id.alpha_picker);
-        rvFonts = findViewById(R.id.rv_text_font);
-        rvAlignments = findViewById(R.id.rv_text_alignment);
-        lines = new ArrayList<>();
-        lines.add(findViewById(R.id.line_1));
-        lines.add(findViewById(R.id.line_2));
-        lines.add(findViewById(R.id.line_3));
-        lines.add(findViewById(R.id.line_4));
-
-        ivMore = findViewById(R.id.iv_setting);
-        llRotate = findViewById(R.id.ll_rotate);
-
-        llRotateModule = findViewById(R.id.ll_rotate_module);
-        llRotateImage = findViewById(R.id.ll_rotate_image);
-        llFlipHorizontal = findViewById(R.id.ll_flip_horizontal);
-        llFlipVertical = findViewById(R.id.ll_flip_vertical);
+        initViews();
 
         //------------------------------  S E T U P  &   L O A D  ----------------------------------
 
-        // init the Animation helper class
-        animationHelper = new AnimationHelper(300);
+        animationHelper = new AnimationHelper(300); // init the Animation helper class
 
+        media = getIntent().getStringExtra("media"); // get media from previous activity
 
-        // get media from previous activity
-        media = getIntent().getStringExtra("media");
+        initCanvas(); //create bitmap from media and load in imageView
 
-        //create bitmap from media and load in imageView
-        initCanvas();
+        setFiltersRecyclerView();  // set Filters RecyclerView
 
-        // set Filters & Fonts RecyclerView
-        setFiltersRecyclerView();
+        setFontsRecyclerView();  // set Fonts RecyclerView
 
-        setFontsRecyclerView();
+        setAlignmentRecyclerView();  // set Text Alignment RecyclerView
 
-        setAlignmentRecyclerView();
+        setSliderChangeListener();  // set listener for slider value change
 
-        // set listener for slider value change
-        setSliderChangeListener();
+        setTextColorPickerListeners();  // set listener of Color Pickers for Text Module
 
-        // set listener for Color Pickers
-        setColorPickerListeners();
-
+        setBrushPickersListeners(); // set the pickers listeners for the Drawing Module
 
         // init location provider
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
@@ -304,6 +231,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             saveCurrentState();
             applyFilter(selectedFilterPosition);
         });
+
 
         // ------------------- Adjust -----------------------
         ivAdjust.setOnClickListener(view -> {
@@ -371,6 +299,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             emojisBottomSheet.show(getSupportFragmentManager(), "emojis");
         });
 
+
         // --------------- Text Module -----------------------
         ivText.setOnClickListener(v -> {
             selected = Menu.ADD_TEXT;
@@ -405,19 +334,13 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             openAddTextFragment();
         });
 
+
         // --------------- Drawer  -----------------------
-
-        ivMore.setOnClickListener(v -> {
-            drawer.openDrawer(GravityCompat.END);
-
-//            Intent intent = new Intent(context, MoreFeaturesActivity.class);
-//            startActivity(intent);
-//            overridePendingTransition(R.anim.right_to_left, R.anim.anim_stay);
-//            overridePendingTransition(R.anim.right_to_left, 0);
-        });
-
+        ivMore.setOnClickListener(v -> drawer.openDrawer(GravityCompat.END));
         ivCloseDrawer.setOnClickListener(v -> drawer.closeDrawer(GravityCompat.END));
 
+
+        // ---------------  Rotate & Flip  -----------------------
         llRotate.setOnClickListener(v -> {
             drawer.closeDrawer(GravityCompat.END);
             selected = Menu.ROTATE_FLIP;
@@ -432,8 +355,38 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         llFlipVertical.setOnClickListener(v -> myCanvas.flipVertical());
 
 
-        // --------------- Others -----------------------
+        // ---------------  Blur  -----------------------
+        llBlur.setOnClickListener(v -> {
+            drawer.closeDrawer(GravityCompat.END);
+            selected = Menu.BLUR;
+            showSecondMenu(true);
+            saveCurrentState();
+        });
 
+
+        // ---------------  Draw with Brush  -----------------------
+        llBrush.setOnClickListener(v -> {
+            drawer.closeDrawer(GravityCompat.END);
+            selected = Menu.BRUSH;
+            showSecondMenu(true);
+            saveCurrentState();
+            myCanvas.setDrawingEnabled(true);
+        });
+
+        llBrushSize.setOnClickListener(v -> {
+            selectDrawTab(0);
+        });
+
+        llBrushColor.setOnClickListener(v -> {
+            selectDrawTab(1);
+        });
+
+        llBrushAlpha.setOnClickListener(v -> {
+            selectDrawTab(2);
+        });
+
+
+        // --------------- Others -----------------------
         tvDone.setOnClickListener(view -> {
 
             // hide the main menus
@@ -443,7 +396,10 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 case STICKERS:
                 case ADD_TEXT:
                 case ROTATE_FLIP:
+                case BLUR:
+                case BRUSH:
                     showSecondMenu(false);
+                    myCanvas.setDrawingEnabled(false);
                     break;
             }
 
@@ -478,6 +434,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 revertBackToPreviousState(); // revert to memento state
 //                myCanvas.setSelectionEnabled(false); // disable selection
                 showSecondMenu(false);
+                myCanvas.setDrawingEnabled(false);
             }
         });
 
@@ -487,6 +444,97 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         // close the activity
         ivBack.setOnClickListener(view -> hideMenuOrBack());
 
+    }
+
+    private void initViews() {
+        rlBottom = findViewById(R.id.rl_bottom);
+        mainToolbar = findViewById(R.id.main_action_bar);
+        ivBack = findViewById(R.id.iv_back);
+        navigationView = findViewById(R.id.navigation_view_editor);
+        drawer = findViewById(R.id.drawer_layout_editor);
+        ivCloseDrawer = findViewById(R.id.iv_close_drawer);
+
+        tvSave = findViewById(R.id.tv_next);
+        secondToolbar = findViewById(R.id.second_action_bar);
+        secondToolbar.setVisibility(View.GONE);
+        ivClose = findViewById(R.id.iv_close);
+        tvToolbarName = findViewById(R.id.tv_actionbar_name);
+        tvDone = findViewById(R.id.tv_done);
+
+        ivOriginal = findViewById(R.id.iv_original_image);
+        rlCanvas = findViewById(R.id.rl_canvas);
+
+        ivFilter = findViewById(R.id.iv_filter);
+        ivAdjust = findViewById(R.id.iv_adjust);
+        ivStickers = findViewById(R.id.iv_stickers);
+        ivText = findViewById(R.id.iv_text);
+
+        rvFilters = findViewById(R.id.rv_filters);
+        rvFilters.setVisibility(View.GONE);
+
+        llAdjust = findViewById(R.id.ll_adjust);
+        llAdjust.setVisibility(View.GONE);
+        llBrightness = findViewById(R.id.ll_brightness);
+        llContrast = findViewById(R.id.ll_contrast);
+        llSaturation = findViewById(R.id.ll_saturation);
+        llWarmth = findViewById(R.id.ll_warmth);
+        llSlider = findViewById(R.id.rl_slider);
+        tvSlider = findViewById(R.id.tv_slider);
+        slider = findViewById(R.id.slider);
+        loading = findViewById(R.id.rl_loading);
+
+        llStickers = findViewById(R.id.ll_stickers);
+        llStickers.setVisibility(View.GONE);
+        ivAddSticker = findViewById(R.id.iv_sticker);
+        ivAddWidgets = findViewById(R.id.iv_widget);
+        ivAddEmoji = findViewById(R.id.iv_emoji);
+
+        llText = findViewById(R.id.ll_text);
+        llText.setVisibility(View.GONE);
+        llFont = findViewById(R.id.ll_text_fonts);
+        llColor = findViewById(R.id.ll_text_color);
+        llAlpha = findViewById(R.id.ll_text_opacity);
+        llAlignment = findViewById(R.id.ll_text_alignment);
+        ivKeyboard = findViewById(R.id.iv_keyboard);
+        llColorPickers = findViewById(R.id.ll_color_pickers);
+        huePicker = findViewById(R.id.hue_picker);
+        saturationPicker = findViewById(R.id.saturation_picker);
+        llAlphaPickers = findViewById(R.id.ll_alpha_pickers);
+        alphaPicker = findViewById(R.id.alpha_picker);
+        rvFonts = findViewById(R.id.rv_text_font);
+        rvAlignments = findViewById(R.id.rv_text_alignment);
+        lines = new ArrayList<>();
+        lines.add(findViewById(R.id.line_1));
+        lines.add(findViewById(R.id.line_2));
+        lines.add(findViewById(R.id.line_3));
+        lines.add(findViewById(R.id.line_4));
+
+        ivMore = findViewById(R.id.iv_setting);
+        llRotate = findViewById(R.id.ll_rotate);
+        llBlur = findViewById(R.id.ll_blur);
+        llBrush = findViewById(R.id.ll_brush);
+
+        llRotateModule = findViewById(R.id.ll_rotate_module);
+        llRotateImage = findViewById(R.id.ll_rotate_image);
+        llFlipHorizontal = findViewById(R.id.ll_flip_horizontal);
+        llFlipVertical = findViewById(R.id.ll_flip_vertical);
+
+        brushView = findViewById(R.id.brush_view);
+        llDrawModule = findViewById(R.id.ll_draw_module);
+        llBrushSize = findViewById(R.id.ll_brush_size);
+        llBrushColor = findViewById(R.id.ll_brush_color);
+        llBrushAlpha = findViewById(R.id.ll_brush_alpha);
+        llBrushSizePickers = findViewById(R.id.ll_size_pickers);
+        llBrushColorPickers = findViewById(R.id.ll_brush_color_pickers);
+        llBrushAlphaPickers = findViewById(R.id.ll_brush_alpha_pickers);
+        brushSizePicker = findViewById(R.id.size_picker);
+        brushHuePicker = findViewById(R.id.brush_hue_picker);
+        brushSaturationPicker = findViewById(R.id.brush_saturation_picker);
+        brushAlphaPicker = findViewById(R.id.brush_alpha_picker);
+        lines2 = new ArrayList<>();
+        lines2.add(findViewById(R.id.brush_line_1));
+        lines2.add(findViewById(R.id.brush_line_2));
+        lines2.add(findViewById(R.id.brush_line_3));
     }
 
     private void initCanvas() {
@@ -586,7 +634,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         });
     }
 
-
     //---------------------------------------  S E T U P  -----------------------------------------
 
     /**
@@ -594,10 +641,19 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
      */
     @Override
     public void onBlurCompleted(BitmapResult bitmapResult) {
-        hideLoading();
         if (bitmapResult.isStatus()) {
-            blurredBitmap = bitmapResult.getBitmap();
-            myCanvas.addBackgroundBitmap(blurredBitmap);
+
+            // blur task is called for background
+            if (selected == Menu.NONE) {
+                hideLoading();
+                blurredBitmap = bitmapResult.getBitmap();
+                myCanvas.addBackgroundBitmap(blurredBitmap);
+            }
+
+            // blur task is called from the Slider/Blur menu
+            else if (selected == Menu.BLUR) {
+                myCanvas.blur(bitmapResult.getBitmap(), blurAmount);
+            }
         } else {
             final Exception exception = bitmapResult.getException();
             Toast.makeText(context, "Exception : " + exception.getMessage(), Toast.LENGTH_SHORT).show();
@@ -724,6 +780,31 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     // show the second action bar
                     animationHelper.moveFromTopToBottom(secondToolbar, 48f);
                     break;
+
+                case BLUR:
+                    final LayerModel firstLayer = myCanvas.getFirstLayer();
+                    if (firstLayer != null) {
+                        tvToolbarName.setText("Blur");
+                        // show the slider from bottom
+                        slider.setValue(firstLayer.blurAmount);
+                        tvSlider.setText(firstLayer.blurAmount + "");
+                        showSlider(true);
+                        // show the second action bar
+                        animationHelper.moveFromTopToBottom(secondToolbar, 48f);
+                    } else {
+                        selected = Menu.NONE;
+                    }
+                    break;
+
+                case BRUSH:
+                    tvToolbarName.setText("Draw");
+                    // show the second action bar
+                    animationHelper.moveFromTopToBottom(secondToolbar, 48f);
+                    // show the draw module
+                    animationHelper.moveFromBottomToTop(llDrawModule, 200f);
+                    // make selection from the Draw Tab
+                    selectDrawTab(selectedDrawTab);
+                    break;
             }
         }
 
@@ -781,8 +862,24 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     animationHelper.moveToTop(secondToolbar, 48f);
                     selected = Menu.NONE;
                     break;
-            }
 
+                case BLUR:
+                    // hide the slider
+                    showSlider(false);
+                    // hide the second action bar
+                    animationHelper.moveToTop(secondToolbar, 48f);
+                    selected = Menu.NONE;
+                    break;
+
+                case BRUSH:
+                    // hide the bottom view as well
+                    animationHelper.moveToBottom(llDrawModule, 200f);
+                    // hide the second action bar
+                    animationHelper.moveToTop(secondToolbar, 48f);
+                    selected = Menu.NONE;
+                    break;
+
+            }
         }
     }
 
@@ -881,6 +978,8 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         blurredBitmap.recycle();
     }
 
+
+    //----------------------------------------- F I L T E R S --------------------------------------
     private void setFiltersRecyclerView() {
         filters = new ArrayList<>();
         filters.add(new FilterModel(FilterType.NO_FILTER, "Original", R.drawable.image2, true));
@@ -915,9 +1014,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         applyFilter(position);
     }
 
-
-    //----------------------------------------- F I L T E R S --------------------------------------
-
     private void applyFilter(int position) {
         FilterModel filter = filters.get(position);
         filterType = filter.getFilterType();
@@ -927,7 +1023,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         // apply filter
         new FilterTask(context, tempBitmap, filterType, this).execute();
-
 
         // to keep the filters recyclerView in center
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
@@ -977,38 +1072,58 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         }
     }
 
+
+    //------------------------------------------  A D J U S T  -------------------------------------
     @SuppressLint("RestrictedApi")
     private void setSliderChangeListener() {
 
-        slider.addOnChangeListener(new Slider.OnChangeListener() {
+        slider.addOnChangeListener((slider, value, fromUser) -> {
+            switch (selected) {
+                case BRIGHTNESS:
+                    brightness = value;
+                    tvSlider.setText(((int) brightness) + "");
+                    myCanvas.adjustColor(brightness, LayerModel.BRIGHTNESS);
+                    break;
+
+                case CONTRAST:
+                    contrast = value;
+                    tvSlider.setText(((int) contrast) + "");
+                    myCanvas.adjustColor(contrast, LayerModel.CONTRAST);
+                    break;
+
+                case SATURATION:
+                    saturation = value;
+                    tvSlider.setText(((int) saturation) + "");
+                    myCanvas.adjustColor(saturation, LayerModel.SATURATION);
+                    break;
+
+                case HUE:
+                    hue = value;
+                    tvSlider.setText(((int) hue) + "");
+                    myCanvas.adjustColor(hue, LayerModel.WARMTH);
+                    break;
+            }
+        });
+
+        slider.addOnSliderTouchListener(new Slider.OnSliderTouchListener() {
             @Override
-            public void onValueChange(@NonNull Slider slider, float value, boolean fromUser) {
+            public void onStartTrackingTouch(@NonNull Slider slider) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(@NonNull Slider slider) {
                 switch (selected) {
-                    case BRIGHTNESS:
-                        brightness = value;
-                        tvSlider.setText(((int) brightness) + "");
-                        myCanvas.adjustColor(brightness, LayerModel.BRIGHTNESS);
-                        break;
-
-                    case CONTRAST:
-                        contrast = value;
-                        tvSlider.setText(((int) contrast) + "");
-                        myCanvas.adjustColor(contrast, LayerModel.CONTRAST);
-                        break;
-
-                    case SATURATION:
-                        saturation = value;
-                        tvSlider.setText(((int) saturation) + "");
-                        myCanvas.adjustColor(saturation, LayerModel.SATURATION);
-                        break;
-
-                    case HUE:
-                        hue = value;
-                        tvSlider.setText(((int) hue) + "");
-                        myCanvas.adjustColor(hue, LayerModel.WARMTH);
+                    case BLUR:
+                        final LayerModel firstLayer = myCanvas.getFirstLayer();
+                        if (firstLayer != null) {
+                            blurAmount = (int) slider.getValue();
+                            tvSlider.setText(blurAmount + "");
+                            Bitmap tempBitmap = originalBitmap.copy(originalBitmap.getConfig(), true);
+                            new BlurTask(context, tempBitmap, blurAmount / 4, EditorActivity.this).execute();
+                        }
                         break;
                 }
-
             }
         });
     }
@@ -1021,9 +1136,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, RC_LOCATION);
         }
     }
-
-
-    //------------------------------------------  A D J U S T  -------------------------------------
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -1039,6 +1151,11 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
 
     //----------------------------------------  S T I K E R S  -------------------------------------
+    private void openBottomSheet(String location, String shortLocation) {
+        if (widgetsBottomSheet == null)
+            widgetsBottomSheet = new WidgetsBottomSheet(location, shortLocation, this);
+        widgetsBottomSheet.show(getSupportFragmentManager(), "widgets");
+    }
 
     private void getDeviceLocation() {
         try {
@@ -1071,12 +1188,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             openBottomSheet(null, null);
             Toast.makeText(context, "Exception while getting device location : " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-    }
-
-    private void openBottomSheet(String location, String shortLocation) {
-        if (widgetsBottomSheet == null)
-            widgetsBottomSheet = new WidgetsBottomSheet(location, shortLocation, this);
-        widgetsBottomSheet.show(getSupportFragmentManager(), "widgets");
     }
 
     /**
@@ -1202,21 +1313,26 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
 
     //--------------------------------------  A D D   T E X T  -------------------------------------
-
-    private void setColorPickerListeners() {
+    private void setTextColorPickerListeners() {
 
         // set default color picker values
         huePicker.setPosition(50); // to show thumb in center
         saturationPicker.setPosition(0); // to show the white color
         alphaPicker.setPosition(100); // to show the 100% opacity/alpha
 
+        // connect pickers so the color retured will be combination of all these instead of a color from single picker
+        huePicker.connect(saturationPicker, alphaPicker);
+        saturationPicker.connect(huePicker, alphaPicker);
+        alphaPicker.connect(huePicker, saturationPicker);
+
+
         // create color as result of all three pickers
         int defaultColor = getColorFromHSVA(huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
                 saturationPicker.getCurrentValue(), alphaPicker.getCurrentAlpha());
 
         // update saturation picker and alpha picker
-        saturationPicker.updateSaturationColor(huePicker.getCurrentHue());
-        alphaPicker.updatePickerHueSaturation(defaultColor);
+        saturationPicker.updateBaseColor(huePicker.getCurrentHue());
+        alphaPicker.updateBaseColor(defaultColor);
 
 
         // set color info in TextInfo object
@@ -1236,35 +1352,20 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             textInfo.hsv[0] = huePicker.getCurrentHue();
             textInfo.huePosition = huePicker.getPosition();
 
-            // create color as result of all three pickers
-            int newColor = getColorFromHSVA(huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
-                    saturationPicker.getCurrentValue(), alphaPicker.getCurrentAlpha());
-
-            // update saturation picker and alpha picker
-            saturationPicker.updateSaturationColor(huePicker.getCurrentHue());
-            alphaPicker.updatePickerHueSaturation(newColor);
-
             // update the layer
-            updateTheEditableStickerLayer(newColor, huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
+            updateTheEditableStickerLayer(color, huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
                     saturationPicker.getCurrentValue());
 
         });
 
-        saturationPicker.setSaturationChangeListener((color, saturation) -> {
+        saturationPicker.setSaturationChangeListener((color, saturation, value) -> {
             // update textInfo object
             textInfo.hsv[1] = saturationPicker.getCurrentSaturation();
             textInfo.hsv[2] = saturationPicker.getCurrentValue();
             textInfo.saturationPosition = saturationPicker.getPosition();
 
-            // create color as result of all three pickers
-            int newColor = getColorFromHSVA(huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
-                    saturationPicker.getCurrentValue(), alphaPicker.getCurrentAlpha());
-
-            // update alpha picker
-            alphaPicker.updatePickerHueSaturation(newColor);
-
             // update the layer
-            updateTheEditableStickerLayer(newColor, huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(), saturationPicker.getCurrentValue());
+            updateTheEditableStickerLayer(color, huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(), saturationPicker.getCurrentValue());
         });
 
         alphaPicker.setAlphaChangeListener((color, value) -> {
@@ -1272,12 +1373,8 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             textInfo.alpha = alphaPicker.getCurrentAlpha();
             textInfo.alphaPosition = alphaPicker.getPosition();
 
-            // create color as result of all three pickers
-            int newColor = getColorFromHSVA(huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(),
-                    saturationPicker.getCurrentValue(), alphaPicker.getCurrentAlpha());
-
             // update the layer
-            updateTheEditableStickerLayer(newColor, huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(), saturationPicker.getCurrentValue());
+            updateTheEditableStickerLayer(color, huePicker.getCurrentHue(), saturationPicker.getCurrentSaturation(), saturationPicker.getCurrentValue());
         });
     }
 
@@ -1314,38 +1411,38 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             case 0: // Fonts RecyclerView
                 rvFonts.setVisibility(View.VISIBLE);
                 llColorPickers.setVisibility(View.GONE);
-                llAlphaPicker.setVisibility(View.GONE);
+                llAlphaPickers.setVisibility(View.GONE);
                 rvAlignments.setVisibility(View.GONE);
-                animateTopSheetTabLayout(0);
+                animateTextTopSheetTabLayout(0);
                 break;
 
             case 1:
                 rvFonts.setVisibility(View.GONE);
                 llColorPickers.setVisibility(View.VISIBLE);
-                llAlphaPicker.setVisibility(View.GONE);
+                llAlphaPickers.setVisibility(View.GONE);
                 rvAlignments.setVisibility(View.GONE);
-                animateTopSheetTabLayout(1);
+                animateTextTopSheetTabLayout(1);
                 break;
 
             case 2:
                 rvFonts.setVisibility(View.GONE);
                 llColorPickers.setVisibility(View.GONE);
-                llAlphaPicker.setVisibility(View.VISIBLE);
+                llAlphaPickers.setVisibility(View.VISIBLE);
                 rvAlignments.setVisibility(View.GONE);
-                animateTopSheetTabLayout(2);
+                animateTextTopSheetTabLayout(2);
                 break;
 
             case 3:
                 rvFonts.setVisibility(View.GONE);
                 llColorPickers.setVisibility(View.GONE);
-                llAlphaPicker.setVisibility(View.GONE);
+                llAlphaPickers.setVisibility(View.GONE);
                 rvAlignments.setVisibility(View.VISIBLE);
-                animateTopSheetTabLayout(3);
+                animateTextTopSheetTabLayout(3);
                 break;
         }
     }
 
-    private void animateTopSheetTabLayout(int next) {
+    private void animateTextTopSheetTabLayout(int next) {
         AnimationHelper animationHelper = new AnimationHelper(200);
         if (next > selectedTextTab) {
             animationHelper.animateSlideToRight(lines, selectedTextTab, next);
@@ -1386,6 +1483,9 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         }
     }
 
+    /**
+     * When Text Alignment is selected in Text Module
+     */
     @Override
     public void onAlignmentSelected(int position) {
         // updating the textInfo
@@ -1441,6 +1541,9 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         return index;
     }
 
+    /**
+     * Open AddTextFragment for adding new text
+     */
     private void openAddTextFragment() {
         final AddTextFragment fragment = new AddTextFragment(this, this, blurredBitmap, textInfo);
         getSupportFragmentManager()
@@ -1450,6 +1553,9 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 .commit();
     }
 
+    /**
+     * Open AddTextFragment for editing given text
+     */
     private void openEditTextFragment(String text) {
         final AddTextFragment fragment = new AddTextFragment(this, this, blurredBitmap, textInfo, text);
         getSupportFragmentManager()
@@ -1460,7 +1566,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     }
 
     /**
-     * When Text is Added/Edited from the AddTextFragment in Text Module
+     * When New Text is Added from the AddTextFragment in Text Module
      */
     @Override
     public void onTextAdded(String text) {
@@ -1473,6 +1579,9 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         myCanvas.addLayer(new LayerModel(stickerView, textInfo.copy()));
     }
 
+    /**
+     * When Text is Edited from the AddTextFragment in Text Module
+     */
     @Override
     public void onTextEdited(String text) {
         final LayerModel lastLayer = myCanvas.getLastLayer();
@@ -1487,5 +1596,81 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             lastLayer.sticker.text = text;
             myCanvas.invalidate();
         }
+    }
+
+
+    //--------------------------------- D R A W   with   B R U S H  --------------------------------
+    private void selectDrawTab(int selectedTab) {
+        switch (selectedTab) {
+            case 0: // Size Pickers
+                llBrushSizePickers.setVisibility(View.VISIBLE);
+                llBrushColorPickers.setVisibility(View.GONE);
+                llBrushAlphaPickers.setVisibility(View.GONE);
+                animateDrawTopSheetTabLayout(0);
+                break;
+
+            case 1:
+                llBrushSizePickers.setVisibility(View.GONE);
+                llBrushColorPickers.setVisibility(View.VISIBLE);
+                llBrushAlphaPickers.setVisibility(View.GONE);
+                animateDrawTopSheetTabLayout(1);
+                break;
+
+            case 2:
+                llBrushSizePickers.setVisibility(View.GONE);
+                llBrushColorPickers.setVisibility(View.GONE);
+                llBrushAlphaPickers.setVisibility(View.VISIBLE);
+                animateDrawTopSheetTabLayout(2);
+                break;
+        }
+    }
+
+    private void animateDrawTopSheetTabLayout(int next) {
+        AnimationHelper animationHelper = new AnimationHelper(200);
+        if (next > selectedDrawTab) {
+            animationHelper.animateSlideToRight(lines2, selectedDrawTab, next);
+        } else if (next < selectedDrawTab) {
+            animationHelper.animateSlideToLeft(lines2, selectedDrawTab, next);
+        }
+
+        // update the tab position after applying the ui changes
+        selectedDrawTab = next;
+    }
+
+    private void setBrushPickersListeners() {
+
+        brushHuePicker.connect(brushSaturationPicker, brushAlphaPicker);
+        brushSaturationPicker.connect(brushHuePicker, brushAlphaPicker);
+        brushAlphaPicker.connect(brushHuePicker, brushSaturationPicker);
+
+        brushSizePicker.setPositionChangeListener(position -> {
+            brushView.setVisibility(View.VISIBLE);
+            brushView.updateSize((int) (position / 3));
+            myCanvas.updateSize((int) (position / 3));
+            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
+        });
+
+        brushHuePicker.setHueChangeListener((color, hue) -> {
+            brushView.setVisibility(View.VISIBLE);
+            brushView.updateColor(color);
+            myCanvas.updateColor(color);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
+        });
+
+        brushSaturationPicker.setSaturationChangeListener((color, saturation, value) -> {
+            brushView.setVisibility(View.VISIBLE);
+            brushView.updateColor(color);
+            myCanvas.updateColor(color);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
+        });
+
+        brushAlphaPicker.setAlphaChangeListener((color, alpha) -> {
+            brushView.setVisibility(View.VISIBLE);
+            brushView.updateColor(color);
+            myCanvas.updateColor(color);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
+        });
+
+
     }
 }
