@@ -3,6 +3,7 @@ package com.drudotstech.customgallery.mycanvas;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -226,6 +227,7 @@ public class MyCanvas extends View {
         bitmapPaint.setAntiAlias(true);
     }
 
+
     //region --> G E T T E R S   &   S E T T E R S <--
 
     public static float getBoundedScale(float scale) {
@@ -267,11 +269,49 @@ public class MyCanvas extends View {
         drawingPaint.setColor(Color.WHITE);
         drawingPaint.setAntiAlias(true);
         drawingPaint.setDither(true);
+        drawingPaint.setAlpha(0xff);
+//        drawingPaint.setStrokeJoin(Paint.Join.BEVEL);
+//        drawingPaint.setStrokeCap(Paint.Cap.BUTT);
+//        drawingPaint.setStrokeJoin(Paint.Join.ROUND);
+//        drawingPaint.setStrokeCap(Paint.Cap.ROUND);
+    }
+
+    public void setStrokeCap() {
+        drawingPaint.setStrokeCap(Paint.Cap.ROUND);
+        drawingPaint.setStrokeJoin(Paint.Join.BEVEL);
+    }
+
+    public void setStrokeJoin() {
         drawingPaint.setStrokeJoin(Paint.Join.ROUND);
         drawingPaint.setStrokeCap(Paint.Cap.ROUND);
-        drawingPaint.setXfermode(null);
-        drawingPaint.setAlpha(0xff);
+        drawingPaint.setMaskFilter(new BlurMaskFilter(100, BlurMaskFilter.Blur.SOLID));
     }
+
+    public void setBothRound() {
+        drawingPaint.setStrokeJoin(Paint.Join.ROUND);
+        drawingPaint.setStrokeCap(Paint.Cap.ROUND);
+    }
+
+    public void setNoneRound() {
+        drawingPaint.setStrokeJoin(Paint.Join.BEVEL);
+        drawingPaint.setStrokeCap(Paint.Cap.BUTT);
+    }
+
+    public Paint getDrawingPaintCopy() {
+        Paint paint = new Paint();
+        if (drawingPaint != null) {
+            paint.setStyle(drawingPaint.getStyle());
+            paint.setStrokeWidth(drawingPaint.getStrokeWidth());
+            paint.setColor(drawingPaint.getColor());
+            paint.setAntiAlias(drawingPaint.isAntiAlias());
+            paint.setDither(drawingPaint.isDither());
+            paint.setStrokeJoin(drawingPaint.getStrokeJoin());
+            paint.setStrokeCap(drawingPaint.getStrokeCap());
+            paint.setMaskFilter(drawingPaint.getMaskFilter());
+        }
+        return paint;
+    }
+
 
     public void addBackgroundBitmap(Bitmap bitmap) {
         backgroundBitmap = bitmap;
@@ -993,7 +1033,7 @@ public class MyCanvas extends View {
     }
 
     public void addPaintLayer() {
-        if (!isPaintAdded()) { // paint layers is not added yet
+        if (paintNotAdded()) { // paint layers is not added yet
             ColorFilter colorFilter = PaintFactory.adjustColor(50, 50, 50, 50);
             Paint paint = new Paint();
             paint.setColorFilter(colorFilter);
@@ -1004,7 +1044,7 @@ public class MyCanvas extends View {
     }
 
     public LayerModel getPaintLayer() {
-        if (!isPaintAdded()) { // paint layers is not added yet
+        if (paintNotAdded()) { // paint layers is not added yet
             ColorFilter colorFilter = PaintFactory.adjustColor(50, 50, 50, 50);
             Paint paint = new Paint();
             paint.setColorFilter(colorFilter);
@@ -1016,7 +1056,7 @@ public class MyCanvas extends View {
     }
 
     public void setPaintLayer(LayerModel layerModel) {
-        if (!isPaintAdded()) { // paint layers is not added yet
+        if (paintNotAdded()) { // paint layers is not added yet
             layers.add(1, layerModel);
         } else {
             layers.set(1, layerModel);
@@ -1050,7 +1090,7 @@ public class MyCanvas extends View {
         return index;
     }
 
-    private boolean isPaintAdded() {
+    private boolean paintNotAdded() {
         boolean found = false;
         for (LayerModel layer : layers) {
             if (layer.type == LayerModel.PAINT) {
@@ -1058,7 +1098,7 @@ public class MyCanvas extends View {
                 break;
             }
         }
-        return found;
+        return !found;
     }
 
     public LayerModel getFirstLayer() {
@@ -1091,21 +1131,6 @@ public class MyCanvas extends View {
             drawingPaint.setColor(color);
         }
         invalidate();
-    }
-
-    public Paint getDrawingPaintCopy() {
-        Paint paint = new Paint();
-        if (drawingPaint != null) {
-            paint.setStyle(drawingPaint.getStyle());
-            paint.setStrokeWidth(drawingPaint.getStrokeWidth());
-            paint.setColor(drawingPaint.getColor());
-            paint.setAntiAlias(drawingPaint.isAntiAlias());
-            paint.setDither(drawingPaint.isDither());
-            paint.setStrokeJoin(drawingPaint.getStrokeJoin());
-            paint.setStrokeCap(drawingPaint.getStrokeCap());
-            paint.setXfermode(drawingPaint.getXfermode());
-        }
-        return paint;
     }
 
     //endregion

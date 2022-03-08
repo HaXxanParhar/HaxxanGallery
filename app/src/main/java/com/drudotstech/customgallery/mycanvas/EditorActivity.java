@@ -140,7 +140,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private NavigationView navigationView;
     private DrawerLayout drawer;
     private View ivCloseDrawer;
-    private View llRotate, llBlur, llBrush, llWhitener;
+    private View llRotate, llBlur, llBrush, llWhitener, llDoodle, llBlemish;
 
     // Rotate Flip Views
     private View llRotateModule, llRotateImage, llFlipHorizontal, llFlipVertical;
@@ -234,15 +234,18 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
 
         // ------------------- Adjust -----------------------
-        ivAdjust.setOnClickListener(view -> {
-            selected = Menu.ADJUST;
-            showSecondMenu(true);
+        ivAdjust.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                selected = Menu.ADJUST;
+                EditorActivity.this.showSecondMenu(true);
 
-            // add the paint layer if not already added
-            myCanvas.addPaintLayer();
+                // add the paint layer if not already added
+                myCanvas.addPaintLayer();
 
-            // save the current canvas state
-            saveCurrentState();
+                // save the current canvas state
+                EditorActivity.this.saveCurrentState();
+            }
         });
 
         llBrightness.setOnClickListener(view -> {
@@ -365,12 +368,40 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
 
         // ---------------  Draw with Brush  -----------------------
-        llBrush.setOnClickListener(v -> {
+        llBrush.setOnClickListener(v ->  {
             drawer.closeDrawer(GravityCompat.END);
             selected = Menu.BRUSH;
             showSecondMenu(true);
             saveCurrentState();
             myCanvas.setDrawingEnabled(true);
+            myCanvas.setBothRound();
+        });
+
+        llDoodle.setOnClickListener(v -> {
+            drawer.closeDrawer(GravityCompat.END);
+            selected = Menu.BRUSH;
+            showSecondMenu(true);
+            saveCurrentState();
+            myCanvas.setDrawingEnabled(true);
+            myCanvas.setStrokeCap();
+        });
+
+        llWhitener.setOnClickListener(v -> {
+            drawer.closeDrawer(GravityCompat.END);
+            selected = Menu.BRUSH;
+            showSecondMenu(true);
+            saveCurrentState();
+            myCanvas.setDrawingEnabled(true);
+            myCanvas.setStrokeJoin();
+        });
+
+        llBlemish.setOnClickListener(v -> {
+            drawer.closeDrawer(GravityCompat.END);
+            selected = Menu.BRUSH;
+            showSecondMenu(true);
+            saveCurrentState();
+            myCanvas.setDrawingEnabled(true);
+            myCanvas.setNoneRound();
         });
 
         llBrushSize.setOnClickListener(v -> {
@@ -513,6 +544,9 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         llRotate = findViewById(R.id.ll_rotate);
         llBlur = findViewById(R.id.ll_blur);
         llBrush = findViewById(R.id.ll_brush);
+        llDoodle = findViewById(R.id.ll_doodle);
+        llWhitener = findViewById(R.id.ll_whitner);
+        llBlemish = findViewById(R.id.ll_blemish);
 
         llRotateModule = findViewById(R.id.ll_rotate_module);
         llRotateImage = findViewById(R.id.ll_rotate_image);

@@ -138,15 +138,6 @@
         android:visibility="gone"
         app:tint="@color/white" />
 
-    <com.drudotstech.customgallery.mycanvas.MyBrushView
-        android:id="@+id/brush_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:visibility="gone"
-        app:brushColor="@color/red"
-        app:brushSize="8" />
-
     <RelativeLayout
         android:id="@+id/rl_bottom"
         android:layout_width="match_parent"
