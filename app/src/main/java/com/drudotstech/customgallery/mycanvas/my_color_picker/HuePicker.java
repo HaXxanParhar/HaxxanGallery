@@ -138,6 +138,27 @@ public class HuePicker extends BasePicker {
         setThumbPaintColor(color);
     }
 
+    public int getCurrentColor() {
+        hsv[0] = getCurrentHue();
+        hsv[1] = 1;
+        hsv[2] = 1;
+
+        // creating color from values of saturation Picker and Alpha Picker
+        if (saturationPicker != null) {
+            hsv[1] = saturationPicker.getCurrentSaturation();
+            hsv[2] = saturationPicker.getCurrentValue();
+            // update saturation picker
+            saturationPicker.updateBaseColor(getCurrentHue());
+        }
+
+        int alpha = 255;
+        if (alphaPicker != null) {
+            alpha = alphaPicker.getCurrentAlpha();
+        }
+
+        return Color.HSVToColor(alpha, hsv);
+    }
+
 
     public float getCurrentHue() {
         return getHueFromPosition(getPosition());

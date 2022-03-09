@@ -3,7 +3,6 @@ package com.drudotstech.customgallery.mycanvas;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -59,7 +58,7 @@ public class MyCanvas extends View {
      * the delay (ms) between action down and up that will count as click
      */
     private static final int CLICK_DELAY = 200;
-    private static final float TOUCH_TOLERANCE = 4;
+    private static final float TOUCH_TOLERANCE = 0;
 
     /**
      * The Context
@@ -281,10 +280,11 @@ public class MyCanvas extends View {
         drawingPaint.setStrokeJoin(Paint.Join.BEVEL);
     }
 
-    public void setStrokeJoin() {
+    public void setWhitener() {
         drawingPaint.setStrokeJoin(Paint.Join.ROUND);
         drawingPaint.setStrokeCap(Paint.Cap.ROUND);
-        drawingPaint.setMaskFilter(new BlurMaskFilter(100, BlurMaskFilter.Blur.SOLID));
+        drawingPaint.setShadowLayer(20, 10, 10, drawingPaint.getColor());
+//        drawingPaint.setMaskFilter(new BlurMaskFilter(100, BlurMaskFilter.Blur.SOLID));
     }
 
     public void setBothRound() {
@@ -294,7 +294,7 @@ public class MyCanvas extends View {
 
     public void setNoneRound() {
         drawingPaint.setStrokeJoin(Paint.Join.BEVEL);
-        drawingPaint.setStrokeCap(Paint.Cap.BUTT);
+        drawingPaint.setStrokeCap(Paint.Cap.SQUARE);
     }
 
     public Paint getDrawingPaintCopy() {
@@ -303,11 +303,20 @@ public class MyCanvas extends View {
             paint.setStyle(drawingPaint.getStyle());
             paint.setStrokeWidth(drawingPaint.getStrokeWidth());
             paint.setColor(drawingPaint.getColor());
+//            paint.setColor(Color.WHITE);
             paint.setAntiAlias(drawingPaint.isAntiAlias());
             paint.setDither(drawingPaint.isDither());
             paint.setStrokeJoin(drawingPaint.getStrokeJoin());
             paint.setStrokeCap(drawingPaint.getStrokeCap());
             paint.setMaskFilter(drawingPaint.getMaskFilter());
+//            paint.setShadowLayer(50, 0, 0, Color.WHITE);
+
+//            paint.setShadowLayer(
+//                    drawingPaint.getShadowLayerRadius(),
+//                    drawingPaint.getShadowLayerDx(),
+//                    drawingPaint.getShadowLayerDy(),
+//                    drawingPaint.getShadowLayerColor()
+//                    );
         }
         return paint;
     }
@@ -489,24 +498,11 @@ public class MyCanvas extends View {
 
                         // If drawing on canvas is enabled
                         if (isDrawingEnabled) {
-                            // create a new drawing layer and add in layers
-//                            LayerModel layerModel = new LayerModel(getDrawingPaintCopy(), new Path());
-//                            layers.add(layerModel);
-
-                            // note the starting x,y
-//                            mStartX = x;
-//                            mStartY = y;
-//                            layers.get(layers.size() - 1).path.moveTo(x, y);
-//                            mCurX = x;
-//                            mCurY = y;
-
-
                             mPath = new Path();
                             // create a new drawing layer and add in layers
                             LayerModel layerModel = new LayerModel(getDrawingPaintCopy(), mPath);
                             layers.add(layerModel);
 
-                            mPath.reset();
                             mPath.moveTo(x, y);
                             mCurX = x;
                             mCurY = y;
@@ -637,13 +633,6 @@ public class MyCanvas extends View {
                         if (isDrawingEnabled) {
                             final LayerModel layerModel = layers.get(layers.size() - 1);
                             layerModel.path.lineTo(mCurX, mCurY);
-
-//                            // draw a dot on click
-//                            if (mStartX == mCurX && mStartY == mCurY) {
-//                                layerModel.path.lineTo(mCurX, mCurY + 2);
-//                                layerModel.path.lineTo(mCurX + 1, mCurY + 2);
-//                                layerModel.path.lineTo(mCurX + 1, mCurY);
-//                            }
                             invalidate();
 
                         } else {
@@ -710,15 +699,14 @@ public class MyCanvas extends View {
                             float dy = Math.abs(y - mCurY);
 
                             if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-                                layers.get(layers.size() - 1).path.quadTo(mCurX, mCurY, (x + mCurX) / 2, (y + mCurY) / 2);
+                                final LayerModel layer = layers.get(layers.size() - 1);
+
+                                BrushStore.curvedPen2(mCurX, mCurY, x, y, layer);
+
                                 mCurX = x;
                                 mCurY = y;
                                 invalidate();
                             }
-
-//                            layers.get(layers.size() - 1).path.quadTo(mCurX, mCurY, (x + mCurX) / 2, (y + mCurY) / 2);
-//                            mCurX = x;
-//                            mCurY = y;
                         } else {
 
                             // only perform actions if view is clicked/selected
@@ -857,6 +845,35 @@ public class MyCanvas extends View {
             return false;
         }
     }
+
+    private void straigtPen(float x, float y, LayerModel layer) {
+        layer.path.lineTo(x, y);
+        for (int i = 1; i < layer.paint.getStrokeWidth(); i++) {
+            layer.path.moveTo(mCurX, mCurY + (i * 2));
+            layer.path.lineTo(x, y + (i * 2));
+            layer.path.moveTo(mCurX, mCurY - (i * 2));
+            layer.path.lineTo(x, y - (i * 2));
+        }
+        layer.path.moveTo(mCurX, mCurY);
+    }
+
+    private void curvedPen(float x, float y, LayerModel layer) {
+        layer.path.lineTo(x, y);
+        int xOffset = (int) (layer.paint.getStrokeWidth() / 3);
+
+
+        for (int j = (-1 * xOffset); j < xOffset; j++) {
+            for (int i = 1; i < layer.paint.getStrokeWidth() / 2; i++) {
+                // single line
+                layer.path.moveTo(mCurX, mCurY + i + j);
+                layer.path.lineTo(x, y + i + j);
+                layer.path.moveTo(mCurX, mCurY - i + j);
+                layer.path.lineTo(x, y - i + j);
+            }
+        }
+        layer.path.moveTo(mCurX, mCurY);
+    }
+
 
     // region --> H E L P E R S   M E T H O D S   F O R    G E S T U R E S <--
 

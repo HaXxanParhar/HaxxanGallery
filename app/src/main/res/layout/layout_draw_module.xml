@@ -82,12 +82,12 @@
         <com.drudotstech.customgallery.mycanvas.MyBrushView
             android:id="@+id/brush_view"
             android:layout_width="@dimen/_48sdp"
-            android:layout_height="match_parent"
+            android:layout_height="@dimen/_48sdp"
             android:layout_alignParentEnd="true"
             android:layout_centerInParent="true"
             android:visibility="visible"
             app:brushColor="@color/red"
-            app:brushSize="8" />
+            app:brushSize="4" />
 
     </RelativeLayout>
 
@@ -125,14 +125,14 @@
             android:id="@+id/brush_hue_picker"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_24sdp"
-            app:position="50" />
+            app:position="0" />
 
         <com.drudotstech.customgallery.mycanvas.my_color_picker.SaturationPicker
             android:id="@+id/brush_saturation_picker"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_24sdp"
             android:layout_marginTop="@dimen/_4sdp"
-            app:position="0" />
+            app:position="50" />
 
 
     </LinearLayout>

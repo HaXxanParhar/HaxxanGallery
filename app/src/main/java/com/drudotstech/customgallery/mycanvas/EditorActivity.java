@@ -368,13 +368,14 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
 
         // ---------------  Draw with Brush  -----------------------
-        llBrush.setOnClickListener(v ->  {
+        llBrush.setOnClickListener(v -> {
             drawer.closeDrawer(GravityCompat.END);
             selected = Menu.BRUSH;
             showSecondMenu(true);
             saveCurrentState();
             myCanvas.setDrawingEnabled(true);
-            myCanvas.setBothRound();
+            myCanvas.setNoneRound();
+            myCanvas.updateColor(brushHuePicker.getCurrentColor());
         });
 
         llDoodle.setOnClickListener(v -> {
@@ -383,7 +384,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             showSecondMenu(true);
             saveCurrentState();
             myCanvas.setDrawingEnabled(true);
-            myCanvas.setStrokeCap();
+            myCanvas.setBothRound();
         });
 
         llWhitener.setOnClickListener(v -> {
@@ -392,7 +393,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             showSecondMenu(true);
             saveCurrentState();
             myCanvas.setDrawingEnabled(true);
-            myCanvas.setStrokeJoin();
+            myCanvas.setWhitener();
         });
 
         llBlemish.setOnClickListener(v -> {
