@@ -4,9 +4,9 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         jcenter() // Warning: this repository is going to shut down soon
-        maven {
-            url "https://jitpack.io"
-        }
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://oss.jfrog.org/artifactory/libs-snapshot/' }
+        maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local' }
     }
 }
 rootProject.name = "Photo Editor"

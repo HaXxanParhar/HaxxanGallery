@@ -701,7 +701,7 @@ public class MyCanvas extends View {
                             if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
                                 final LayerModel layer = layers.get(layers.size() - 1);
 
-                                BrushStore.curvedPen2(mCurX, mCurY, x, y, layer);
+                                BrushStore.straightLine(mCurX, mCurY, x, y, layer);
 
                                 mCurX = x;
                                 mCurY = y;

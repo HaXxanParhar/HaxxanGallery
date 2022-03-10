@@ -409,59 +409,6 @@ public class AllPicturesActivity extends AppCompatActivity implements PicturesAd
         Croppy.INSTANCE.start(this, cropRequest);
     }
 
-    private void moveToFilter() {
-        if (selectedCount <= 0) return;
-
-        // getting selected image
-        String path = null;
-        int foundCount = 0;
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).isSelected()) {
-                path = list.get(i).getMediaPath();
-                foundCount++;
-                if (foundCount == galleryConfig.getMaxSelection())
-                    break;
-            }
-        }
-
-        if (path == null) return; // null check
-        // creating uri
-        startActivity(new Intent(context, EditorActivity.class)
-                .putExtra("media", path));
-    }
-
-    private void openImageCropper() {
-        if (selectedCount <= 0) return;
-
-        // getting selected image
-        String path = null;
-        int foundCount = 0;
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).isSelected()) {
-                path = list.get(i).getMediaPath();
-                foundCount++;
-                if (foundCount == galleryConfig.getMaxSelection())
-                    break;
-            }
-        }
-
-        if (path == null) return; // null check
-        // creating uri
-        File file = new File(path);
-        Uri uri = Uri.fromFile(file);
-
-        startActivity(new Intent(context, MyCropActivity.class)
-                .putExtra("uri", uri.toString()));
-
-
-        // passing uri to cropper
-//        CropImage.activity(uri)
-//                .setAutoZoomEnabled(true)
-//                .setGuidelines(CropImageView.Guidelines.OFF)
-//                .setCropShape(CropImageView.CropShape.RECTANGLE)
-//                .setAspectRatio(3, 2)
-//                .start(this);
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {

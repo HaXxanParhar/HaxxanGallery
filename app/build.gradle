@@ -87,10 +87,6 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.1.0'
     implementation 'androidx.exifinterface:exifinterface:1.0.0'
 
-    //Support
-    implementation 'com.google.android.material:material:1.0.0'
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-
     //Architecture Components
     implementation "androidx.lifecycle:lifecycle-extensions:2.1.0"
     implementation 'androidx.databinding:databinding-common:7.0.3'
