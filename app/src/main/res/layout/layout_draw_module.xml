@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/_124sdp"
+    android:layout_height="@dimen/_88sdp"
     android:background="@color/app_background"
     android:clickable="true"
     android:focusable="true"
@@ -79,24 +79,24 @@
 
         </LinearLayout>
 
-        <com.drudotstech.customgallery.mycanvas.MyBrushView
-            android:id="@+id/brush_view"
+        <ImageView
+            android:id="@+id/iv_undo"
             android:layout_width="@dimen/_48sdp"
             android:layout_height="@dimen/_48sdp"
             android:layout_alignParentEnd="true"
-            android:layout_centerInParent="true"
-            android:visibility="visible"
-            app:brushColor="@color/red"
-            app:brushSize="4" />
+            android:padding="@dimen/_12sdp"
+            android:src="@drawable/ic_baseline_undo_24"
+            app:tint="@color/white" />
+
+
 
     </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/ll_size_pickers"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/_64sdp"
+        android:layout_height="@dimen/_40sdp"
         android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_12sdp"
         android:gravity="center"
         android:orientation="vertical"
         android:visibility="visible">
@@ -105,6 +105,7 @@
             android:id="@+id/size_picker"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_24sdp"
+            android:visibility="visible"
             app:baseColor="@color/grey"
             app:position="10" />
 
@@ -114,25 +115,30 @@
     <LinearLayout
         android:id="@+id/ll_brush_color_pickers"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/_64sdp"
+        android:layout_height="@dimen/_40sdp"
         android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginVertical="@dimen/_6sdp"
         android:gravity="center"
         android:orientation="vertical"
-        android:visibility="gone">
+        android:visibility="visible">
 
-        <com.drudotstech.customgallery.mycanvas.my_color_picker.HuePicker
+        <com.drudotstech.customgallery.mycanvas.my_color_picker.ColorPicker
             android:id="@+id/brush_hue_picker"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_24sdp"
             app:position="0" />
 
-        <com.drudotstech.customgallery.mycanvas.my_color_picker.SaturationPicker
-            android:id="@+id/brush_saturation_picker"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/_24sdp"
-            android:layout_marginTop="@dimen/_4sdp"
-            app:position="50" />
+        <!--        <com.drudotstech.customgallery.mycanvas.my_color_picker.HuePicker-->
+        <!--            android:id="@+id/brush_hue_picker"-->
+        <!--            android:layout_width="match_parent"-->
+        <!--            android:layout_height="@dimen/_24sdp"-->
+        <!--            app:position="0" />-->
+
+        <!--        <com.drudotstech.customgallery.mycanvas.my_color_picker.SaturationPicker-->
+        <!--            android:id="@+id/brush_saturation_picker"-->
+        <!--            android:layout_width="match_parent"-->
+        <!--            android:layout_height="@dimen/_24sdp"-->
+        <!--            android:layout_marginTop="@dimen/_4sdp"-->
+        <!--            app:position="50" />-->
 
 
     </LinearLayout>
@@ -140,9 +146,8 @@
     <LinearLayout
         android:id="@+id/ll_brush_alpha_pickers"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/_64sdp"
+        android:layout_height="@dimen/_40sdp"
         android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_12sdp"
         android:gravity="center"
         android:orientation="vertical"
         android:visibility="visible">

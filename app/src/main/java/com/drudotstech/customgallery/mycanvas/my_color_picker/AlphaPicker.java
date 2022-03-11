@@ -45,6 +45,11 @@ public class AlphaPicker extends BasePicker {
     private HuePicker huePicker;
 
     /**
+     * connect ColorPicker get the color value
+     */
+    private ColorPicker colorPicker;
+
+    /**
      * connect SaturationPicker to get the color value from both Hue (H) and Saturation (SV)
      */
     private SaturationPicker saturationPicker;
@@ -149,6 +154,9 @@ public class AlphaPicker extends BasePicker {
         if (huePicker != null)
             hsv[0] = huePicker.getCurrentHue();
 
+        if (colorPicker != null)
+            hsv[0] = colorPicker.getCurrentHue();
+
         color = Color.HSVToColor(alpha, hsv);
 
         if (alphaChangeListener != null)
@@ -181,6 +189,9 @@ public class AlphaPicker extends BasePicker {
     public void connect(HuePicker huePicker, SaturationPicker saturationPicker) {
         this.huePicker = huePicker;
         this.saturationPicker = saturationPicker;
+    }
+    public void connect(ColorPicker huePicker) {
+        this.colorPicker = huePicker;
     }
 
     public interface AlphaChangeListener {

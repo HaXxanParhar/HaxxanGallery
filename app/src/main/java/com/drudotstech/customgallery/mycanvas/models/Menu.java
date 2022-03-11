@@ -1,4 +1,4 @@
-package com.drudotstech.customgallery.mycanvas;
+package com.drudotstech.customgallery.mycanvas.models;
 
 /********** Developed by Drudots Technology **********
  * Created by : usman on 3/2/2022 at 12:34 PM

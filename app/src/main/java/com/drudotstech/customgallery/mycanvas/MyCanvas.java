@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import com.drudotstech.customgallery.R;
 import com.drudotstech.customgallery.mycanvas.models.CanvasState;
+import com.drudotstech.customgallery.mycanvas.models.DrawingType;
 import com.drudotstech.customgallery.mycanvas.models.LayerModel;
 import com.drudotstech.customgallery.utils.MyUtils;
 
@@ -183,16 +184,37 @@ public class MyCanvas extends View {
      * Green paint to draw something in green
      */
     private Paint greenPaint;
-    // Drawing with Brush
+
+
+    /**
+     * Flag to indicate user is drawing.
+     */
     private boolean isDrawingEnabled;
+
+    /**
+     * The drawing type.
+     */
+    private DrawingType drawingType;
+
+    /**
+     * Current X coordinate of touch while drawing
+     */
     private float mCurX = 0f;
+
+    /**
+     * Current Y coordinate of touch while drawing
+     */
     private float mCurY = 0f;
-    private float mStartX = 0f;
-    private float mStartY = 0f;
+
+    /**
+     * Temp variable to store the Path of a drawing. This path will be added to layer once single drawing is over
+     */
     private Path mPath;
+
+    /**
+     * The Paint for the drawing. User will change this paint. Paint will be added to layer once single drawing is over
+     */
     private Paint drawingPaint;
-    private int size;
-    private int color;
 
 
     // Listeners
@@ -421,8 +443,13 @@ public class MyCanvas extends View {
         return isDrawingEnabled;
     }
 
-    public void setDrawingEnabled(boolean drawingEnabled) {
+    public void enableDrawing(boolean drawingEnabled, DrawingType drawingType) {
         isDrawingEnabled = drawingEnabled;
+        this.drawingType = drawingType;
+    }
+
+    public void disableDrawing() {
+        isDrawingEnabled = false;
     }
 
     // endregion
@@ -489,9 +516,6 @@ public class MyCanvas extends View {
 
                 final float x = event.getX();
                 final float y = event.getY();
-//                final float X = event.getRawX();
-//                final float Y = event.getRawY();
-
 
                 switch (event.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
@@ -701,7 +725,12 @@ public class MyCanvas extends View {
                             if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
                                 final LayerModel layer = layers.get(layers.size() - 1);
 
-                                BrushStore.straightLine(mCurX, mCurY, x, y, layer);
+                                // set the brush stroke if drawing type is BRUSH
+                                if (drawingType == DrawingType.BRUSH) {
+                                    BrushStore.straightLine(mCurX, mCurY, x, y, layer);
+                                } else {
+                                    mPath.quadTo(mCurX, mCurY, (x + mCurX) / 2, (y + mCurY) / 2);
+                                }
 
                                 mCurX = x;
                                 mCurY = y;
@@ -846,34 +875,6 @@ public class MyCanvas extends View {
         }
     }
 
-    private void straigtPen(float x, float y, LayerModel layer) {
-        layer.path.lineTo(x, y);
-        for (int i = 1; i < layer.paint.getStrokeWidth(); i++) {
-            layer.path.moveTo(mCurX, mCurY + (i * 2));
-            layer.path.lineTo(x, y + (i * 2));
-            layer.path.moveTo(mCurX, mCurY - (i * 2));
-            layer.path.lineTo(x, y - (i * 2));
-        }
-        layer.path.moveTo(mCurX, mCurY);
-    }
-
-    private void curvedPen(float x, float y, LayerModel layer) {
-        layer.path.lineTo(x, y);
-        int xOffset = (int) (layer.paint.getStrokeWidth() / 3);
-
-
-        for (int j = (-1 * xOffset); j < xOffset; j++) {
-            for (int i = 1; i < layer.paint.getStrokeWidth() / 2; i++) {
-                // single line
-                layer.path.moveTo(mCurX, mCurY + i + j);
-                layer.path.lineTo(x, y + i + j);
-                layer.path.moveTo(mCurX, mCurY - i + j);
-                layer.path.lineTo(x, y - i + j);
-            }
-        }
-        layer.path.moveTo(mCurX, mCurY);
-    }
-
 
     // region --> H E L P E R S   M E T H O D S   F O R    G E S T U R E S <--
 
@@ -960,6 +961,21 @@ public class MyCanvas extends View {
 
     private void deleteLayer(int selectedLayerIndex) {
         layers.remove(selectedLayerIndex);
+    }
+
+    private void deleteLastLayer() {
+        layers.remove(layers.size() - 1);
+    }
+
+    /**
+     * Undo only for Layer type = DRAWING right now. Will extend the fucntionality for more layers
+     */
+    public void undo() {
+        final LayerModel lastLayer = getLastLayer();
+        if (lastLayer != null && lastLayer.type == LayerModel.DRAWING) {
+            deleteLastLayer();
+            invalidate();
+        }
     }
 
     // endregion
@@ -1131,17 +1147,22 @@ public class MyCanvas extends View {
     }
 
     public void updateSize(int size) {
-        this.size = Math.max(minSize, size);
+        /**
+         * Stroke Size of the Drawing
+         */
+        int drawingStrokeSize = Math.max(minSize, size);
         if (drawingPaint == null) {
             init();
         } else {
-            drawingPaint.setStrokeWidth(this.size);
+            drawingPaint.setStrokeWidth(drawingStrokeSize);
         }
         invalidate();
     }
 
     public void updateColor(int color) {
-        this.color = color;
+        /**
+         * Stroke Color of the Drawing
+         */
         if (drawingPaint == null) {
             init();
         } else {

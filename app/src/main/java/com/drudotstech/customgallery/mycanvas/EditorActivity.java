@@ -15,8 +15,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
@@ -59,9 +57,12 @@ import com.drudotstech.customgallery.mycanvas.bottom_sheets.WidgetModel;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.WidgetsBottomSheet;
 import com.drudotstech.customgallery.mycanvas.models.AlignModel;
 import com.drudotstech.customgallery.mycanvas.models.CanvasState;
+import com.drudotstech.customgallery.mycanvas.models.DrawingType;
 import com.drudotstech.customgallery.mycanvas.models.LayerModel;
+import com.drudotstech.customgallery.mycanvas.models.Menu;
 import com.drudotstech.customgallery.mycanvas.models.TextInfo;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.AlphaPicker;
+import com.drudotstech.customgallery.mycanvas.my_color_picker.ColorPicker;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.HuePicker;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.NumberPicker;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.SaturationPicker;
@@ -146,12 +147,12 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private View llRotateModule, llRotateImage, llFlipHorizontal, llFlipVertical;
 
     // Drawing Views
-    private MyBrushView brushView;
+//    private MyBrushView brushView;
     private View llDrawModule, llBrushSize, llBrushColor, llBrushAlpha, llBrushSizePickers,
-            llBrushColorPickers, llBrushAlphaPickers;
+            llBrushColorPickers, llBrushAlphaPickers, ivUndo;
     private NumberPicker brushSizePicker;
-    private HuePicker brushHuePicker;
-    private SaturationPicker brushSaturationPicker;
+    private ColorPicker brushHuePicker;
+    //    private SaturationPicker brushSaturationPicker;
     private AlphaPicker brushAlphaPicker;
     private List<View> lines2;
 
@@ -373,9 +374,13 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             selected = Menu.BRUSH;
             showSecondMenu(true);
             saveCurrentState();
-            myCanvas.setDrawingEnabled(true);
+            myCanvas.enableDrawing(true, DrawingType.BRUSH);
             myCanvas.setNoneRound();
             myCanvas.updateColor(brushHuePicker.getCurrentColor());
+        });
+
+        ivUndo.setOnClickListener(v -> {
+            myCanvas.undo();
         });
 
         llDoodle.setOnClickListener(v -> {
@@ -383,7 +388,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             selected = Menu.BRUSH;
             showSecondMenu(true);
             saveCurrentState();
-            myCanvas.setDrawingEnabled(true);
+            myCanvas.enableDrawing(true, DrawingType.DOODLE);
             myCanvas.setBothRound();
         });
 
@@ -392,7 +397,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             selected = Menu.BRUSH;
             showSecondMenu(true);
             saveCurrentState();
-            myCanvas.setDrawingEnabled(true);
+            myCanvas.enableDrawing(true, DrawingType.WHITENER);
             myCanvas.setWhitener();
         });
 
@@ -401,7 +406,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             selected = Menu.BRUSH;
             showSecondMenu(true);
             saveCurrentState();
-            myCanvas.setDrawingEnabled(true);
+            myCanvas.enableDrawing(true, DrawingType.WHITENER);
             myCanvas.setNoneRound();
         });
 
@@ -431,7 +436,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 case BLUR:
                 case BRUSH:
                     showSecondMenu(false);
-                    myCanvas.setDrawingEnabled(false);
+                    myCanvas.disableDrawing();
                     break;
             }
 
@@ -466,7 +471,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 revertBackToPreviousState(); // revert to memento state
 //                myCanvas.setSelectionEnabled(false); // disable selection
                 showSecondMenu(false);
-                myCanvas.setDrawingEnabled(false);
+                myCanvas.disableDrawing();
             }
         });
 
@@ -554,7 +559,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         llFlipHorizontal = findViewById(R.id.ll_flip_horizontal);
         llFlipVertical = findViewById(R.id.ll_flip_vertical);
 
-        brushView = findViewById(R.id.brush_view);
         llDrawModule = findViewById(R.id.ll_draw_module);
         llBrushSize = findViewById(R.id.ll_brush_size);
         llBrushColor = findViewById(R.id.ll_brush_color);
@@ -564,8 +568,9 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         llBrushAlphaPickers = findViewById(R.id.ll_brush_alpha_pickers);
         brushSizePicker = findViewById(R.id.size_picker);
         brushHuePicker = findViewById(R.id.brush_hue_picker);
-        brushSaturationPicker = findViewById(R.id.brush_saturation_picker);
+//        brushSaturationPicker = findViewById(R.id.brush_saturation_picker);
         brushAlphaPicker = findViewById(R.id.brush_alpha_picker);
+        ivUndo = findViewById(R.id.iv_undo);
         lines2 = new ArrayList<>();
         lines2.add(findViewById(R.id.brush_line_1));
         lines2.add(findViewById(R.id.brush_line_2));
@@ -628,7 +633,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         myCanvas.setOnLayerClickListener(new MyCanvas.OnLayerClickListener() {
             @Override
             public void onLayerClick(LayerModel layerModel) {
-                Toast.makeText(context, "clicked!", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(context, "clicked!", Toast.LENGTH_SHORT).show();
 
                 // If Text Module is opened
                 if (selected == Menu.ADD_TEXT
@@ -637,7 +642,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                         && layerModel.sticker.stickerType == StickerView.EDITABLE_TEXT
                         && layerModel.textInfo != null) {
 
-                    Toast.makeText(context, "layer clicked :" + layerModel.sticker.text, Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "layer clicked :" + layerModel.sticker.text, Toast.LENGTH_SHORT).show();
 
                     textInfo = layerModel.textInfo.copy();
 
@@ -664,7 +669,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         myCanvas.setOnLayerSelectListener(new MyCanvas.OnLayerSelectListener() {
             @Override
             public void onLayerSelected(LayerModel layerModel, int layerIndex) {
-                Toast.makeText(context, "Layer " + layerIndex + " selected!", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(context, "Layer " + layerIndex + " selected!", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -1674,36 +1679,36 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
     private void setBrushPickersListeners() {
 
-        brushHuePicker.connect(brushSaturationPicker, brushAlphaPicker);
-        brushSaturationPicker.connect(brushHuePicker, brushAlphaPicker);
-        brushAlphaPicker.connect(brushHuePicker, brushSaturationPicker);
+        brushHuePicker.connect(brushAlphaPicker);
+        brushAlphaPicker.connect(brushHuePicker);
+//        brushSaturationPicker.connect(brushHuePicker, brushAlphaPicker);
 
         brushSizePicker.setPositionChangeListener(position -> {
-            brushView.setVisibility(View.VISIBLE);
-            brushView.updateSize((int) (position / 3));
             myCanvas.updateSize((int) (position / 3));
-            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
+//            brushView.setVisibility(View.VISIBLE);
+//            brushView.updateSize((int) (position / 3));
+//            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
         });
 
-        brushHuePicker.setHueChangeListener((color, hue) -> {
-            brushView.setVisibility(View.VISIBLE);
-            brushView.updateColor(color);
+        brushHuePicker.setHueChangeListener((color) -> {
             myCanvas.updateColor(color);
-            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
+//            brushView.setVisibility(View.VISIBLE);
+//            brushView.updateColor(color);
+//            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
         });
 
-        brushSaturationPicker.setSaturationChangeListener((color, saturation, value) -> {
-            brushView.setVisibility(View.VISIBLE);
-            brushView.updateColor(color);
-            myCanvas.updateColor(color);
-            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
-        });
+//        brushSaturationPicker.setSaturationChangeListener((color, saturation, value) -> {
+//            brushView.setVisibility(View.VISIBLE);
+//            brushView.updateColor(color);
+//            myCanvas.updateColor(color);
+//            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
+//        });
 
         brushAlphaPicker.setAlphaChangeListener((color, alpha) -> {
-            brushView.setVisibility(View.VISIBLE);
-            brushView.updateColor(color);
             myCanvas.updateColor(color);
-            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
+//            brushView.setVisibility(View.VISIBLE);
+//            brushView.updateColor(color);
+//            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
         });
 
 

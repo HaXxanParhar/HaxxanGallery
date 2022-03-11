@@ -32,42 +32,86 @@ public class BrushStore {
 
     public static void straightLine(float currentX, float currentY, float x, float y, LayerModel layer) {
 
-        ThreadPool.getInstance().execute(new Runnable() {
-            @Override
-            public void run() {
-                layer.path.lineTo(x, y);
-                int width = (int) layer.paint.getStrokeWidth() / 2;
-                width = 10;
-                float dx = x - currentX;
-                float dy = y - currentY;
-                float ratio = dx / dy;
-                if (ratio < 0) ratio = ratio * -1;
+//        ThreadPool.getInstance().execute(() -> {
+        layer.path.lineTo(x, y);
+        int width = (int) layer.paint.getStrokeWidth() / 2;
+//                width = 10;
+        float dx = x - currentX;
+        float dy = y - currentY;
+        float ratio = dx / dy;
+        if (ratio < 0) ratio = ratio * -1;
+//                Log.d("BrushStore", " dx = " + dx + " dy : " + dy + " ratio : " + ratio);
+        int k = 0;
 
-                if (dx < 0) {
-                    for (float i = 0; i < (Math.abs(dx)); i++) {
-                        float yOffset = i / ratio;
-                        if (dy < 0) {
-                            layer.path.moveTo(currentX - i, currentY - width - yOffset);
-                            layer.path.lineTo(currentX - i, currentY + width - yOffset);
-                        } else {
-                            layer.path.moveTo(currentX - i, currentY - width + yOffset);
-                            layer.path.lineTo(currentX - i, currentY + width + yOffset);
-                        }
-                    }
+        if (dx < 0) {
+            for (float i = 0; i < (Math.abs(dx)); i++) {
+                float yOffset = i / ratio;
+                k++;
+                if (dy < 0) {
+                    layer.path.moveTo(currentX - i, currentY - width - yOffset);
+                    layer.path.lineTo(currentX - i, currentY + width - yOffset);
                 } else {
-                    for (float i = 0; i < dx; i++) {
-                        float yOffset = i / ratio;
-                        if (dy < 0) {
-                            layer.path.moveTo(currentX + i, currentY - width - yOffset);
-                            layer.path.lineTo(currentX + i, currentY + width - yOffset);
-                        } else {
-                            layer.path.moveTo(currentX + i, currentY - width + yOffset);
-                            layer.path.lineTo(currentX + i, currentY + width + yOffset);
-                        }
+                    layer.path.moveTo(currentX - i, currentY - width + yOffset);
+                    layer.path.lineTo(currentX - i, currentY + width + yOffset);
+                }
+            }
+        } else {
+            for (float i = 0; i < dx; i++) {
+                float yOffset = i / ratio;
+                k++;
+                if (dy < 0) {
+                    layer.path.moveTo(currentX + i, currentY - width - yOffset);
+                    layer.path.lineTo(currentX + i, currentY + width - yOffset);
+                } else {
+                    layer.path.moveTo(currentX + i, currentY - width + yOffset);
+                    layer.path.lineTo(currentX + i, currentY + width + yOffset);
+                }
+            }
+        }
+//        Log.d("BrushStore", "--> " + new String(new char[k]).replace("\0", "-"));
+        layer.path.moveTo(currentX, currentY);
+//        });
+    }
+
+    public static void urduBrush(float currentX, float currentY, float x, float y, LayerModel layer) {
+
+        ThreadPool.getInstance().execute(() -> {
+            layer.path.lineTo(x, y);
+            int width = (int) layer.paint.getStrokeWidth() / 2;
+            float dx = x - currentX;
+            float dy = y - currentY;
+            float ratio = dx / dy;
+            ratio = ratio * 1.2f; // added this line only
+            if (ratio < 0) ratio = ratio * -1;
+            int k = 0;
+
+            if (dx < 0) {
+                for (float i = 0; i < (Math.abs(dx)); i++) {
+                    float yOffset = i / ratio;
+                    k++;
+                    if (dy < 0) {
+                        layer.path.moveTo(currentX - i, currentY - width - yOffset);
+                        layer.path.lineTo(currentX - i, currentY + width - yOffset);
+                    } else {
+                        layer.path.moveTo(currentX - i, currentY - width + yOffset);
+                        layer.path.lineTo(currentX - i, currentY + width + yOffset);
                     }
                 }
-                layer.path.moveTo(currentX, currentY);
+            } else {
+                for (float i = 0; i < dx; i++) {
+                    float yOffset = i / ratio;
+                    k++;
+                    if (dy < 0) {
+                        layer.path.moveTo(currentX + i, currentY - width - yOffset);
+                        layer.path.lineTo(currentX + i, currentY + width - yOffset);
+                    } else {
+                        layer.path.moveTo(currentX + i, currentY - width + yOffset);
+                        layer.path.lineTo(currentX + i, currentY + width + yOffset);
+                    }
+                }
             }
+//            Log.d("BrushStore", "--> " + new String(new char[k]).replace("\0", "-"));
+            layer.path.moveTo(currentX, currentY);
         });
     }
 
