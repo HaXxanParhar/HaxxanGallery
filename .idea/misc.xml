@@ -3,7 +3,11 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_brush_image.xml" value="0.1815" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_circle.xml" value="0.172" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_circle2.xml" value="0.1815" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_launcher_foreground.xml" value="0.157" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_rounded_rectangle.xml" value="0.172" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_text.xml" value="0.166" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/mipmap-anydpi-v26/ic_launcher.xml" value="0.157" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.157" />
@@ -25,6 +29,8 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/bg_next_selected.xml" value="0.3" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/bg_select_media.xml" value="0.3" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/bg_white_transparent.xml" value="0.3" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/brush_head.xml" value="0.1815" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/brush_line.xml" value="0.1815" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/cursor_white.xml" value="0.164" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/ic_baseline_arrow_back_24.xml" value="0.3" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/ic_baseline_close_24.xml" value="0.3" />
@@ -98,6 +104,7 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_emoji.xml" value="0.26944444444444443" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_filter.xml" value="0.5" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_sticker.xml" value="0.21614583333333334" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_stroke.xml" value="0.33" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_text_align.xml" value="0.2794871794871795" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_text_font.xml" value="0.5" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/design_widget.xml" value="0.26944444444444443" />
@@ -109,7 +116,7 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/indicator_holder.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/item_aspect_ratio.xml" value="0.16203703703703703" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_adjust_module.xml" value="0.2611111111111111" />
-        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_draw_module.xml" value="0.33" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_draw_module.xml" value="0.25" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_editor.xml" value="0.25" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_more_features.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/layout_rotate_flip_module.xml" value="0.2838541666666667" />

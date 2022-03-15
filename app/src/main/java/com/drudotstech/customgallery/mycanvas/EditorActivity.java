@@ -60,6 +60,7 @@ import com.drudotstech.customgallery.mycanvas.models.CanvasState;
 import com.drudotstech.customgallery.mycanvas.models.DrawingType;
 import com.drudotstech.customgallery.mycanvas.models.LayerModel;
 import com.drudotstech.customgallery.mycanvas.models.Menu;
+import com.drudotstech.customgallery.mycanvas.models.StrokeModel;
 import com.drudotstech.customgallery.mycanvas.models.TextInfo;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.AlphaPicker;
 import com.drudotstech.customgallery.mycanvas.my_color_picker.ColorPicker;
@@ -85,7 +86,7 @@ import java.util.List;
 public class EditorActivity extends BaseActivity implements FilterAdapter.FilterSelectionCallback,
         BlurBitmapCallback, SelectStickerCallback, FilterTask.ApplyFilterCallback, SelectWidgetCallback,
         SelectEmojiCallback, TextFontAdapter.FontSelectionCallback, AddTextFragment.AddTextCallback,
-        TextAlignAdapter.AlignmentSelectionCallback {
+        TextAlignAdapter.AlignmentSelectionCallback, StrokeAdapter.StrokeSelectionCallback {
 
     // region --> V A R I A B L E S <--
     private static final int RC_LOCATION = 101;
@@ -147,14 +148,18 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private View llRotateModule, llRotateImage, llFlipHorizontal, llFlipVertical;
 
     // Drawing Views
-//    private MyBrushView brushView;
-    private View llDrawModule, llBrushSize, llBrushColor, llBrushAlpha, llBrushSizePickers,
-            llBrushColorPickers, llBrushAlphaPickers, ivUndo;
+    private View llDrawModule, llBrushStrokes, llBrushSize, llBrushColor, llBrushAlpha,
+            llBrushSizePickers, llBrushColorPickers, llBrushAlphaPickers, ivUndo;
+    //    private MyBrushView brushView;
     private NumberPicker brushSizePicker;
     private ColorPicker brushHuePicker;
     //    private SaturationPicker brushSaturationPicker;
     private AlphaPicker brushAlphaPicker;
     private List<View> lines2;
+    private RecyclerView rvStrokes;
+    private LinearLayoutManager strokesLayoutManager;
+    private StrokeAdapter strokeAdapter;
+    private List<StrokeModel> strokes;
 
 
     // -------------------------------------- V A R I A B L E S ------------------------------------
@@ -209,6 +214,8 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         setTextColorPickerListeners();  // set listener of Color Pickers for Text Module
 
         setBrushPickersListeners(); // set the pickers listeners for the Drawing Module
+
+        setStrokesRecyclerView();  // set Brush Strokes RecyclerView
 
         // init location provider
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
@@ -385,7 +392,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         llDoodle.setOnClickListener(v -> {
             drawer.closeDrawer(GravityCompat.END);
-            selected = Menu.BRUSH;
+            selected = Menu.DOODLE;
             showSecondMenu(true);
             saveCurrentState();
             myCanvas.enableDrawing(true, DrawingType.DOODLE);
@@ -410,16 +417,20 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             myCanvas.setNoneRound();
         });
 
-        llBrushSize.setOnClickListener(v -> {
+        llBrushStrokes.setOnClickListener(v -> {
             selectDrawTab(0);
         });
 
-        llBrushColor.setOnClickListener(v -> {
+        llBrushSize.setOnClickListener(v -> {
             selectDrawTab(1);
         });
 
-        llBrushAlpha.setOnClickListener(v -> {
+        llBrushColor.setOnClickListener(v -> {
             selectDrawTab(2);
+        });
+
+        llBrushAlpha.setOnClickListener(v -> {
+            selectDrawTab(3);
         });
 
 
@@ -560,6 +571,8 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         llFlipVertical = findViewById(R.id.ll_flip_vertical);
 
         llDrawModule = findViewById(R.id.ll_draw_module);
+        llBrushStrokes = findViewById(R.id.ll_brush_strokes);
+        rvStrokes = findViewById(R.id.rv_strokes);
         llBrushSize = findViewById(R.id.ll_brush_size);
         llBrushColor = findViewById(R.id.ll_brush_color);
         llBrushAlpha = findViewById(R.id.ll_brush_alpha);
@@ -572,6 +585,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         brushAlphaPicker = findViewById(R.id.brush_alpha_picker);
         ivUndo = findViewById(R.id.iv_undo);
         lines2 = new ArrayList<>();
+        lines2.add(findViewById(R.id.brush_line_4));
         lines2.add(findViewById(R.id.brush_line_1));
         lines2.add(findViewById(R.id.brush_line_2));
         lines2.add(findViewById(R.id.brush_line_3));
@@ -837,13 +851,31 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     break;
 
                 case BRUSH:
-                    tvToolbarName.setText("Draw");
+                    tvToolbarName.setText("Brush");
                     // show the second action bar
                     animationHelper.moveFromTopToBottom(secondToolbar, 48f);
                     // show the draw module
                     animationHelper.moveFromBottomToTop(llDrawModule, 200f);
+
+                    // show the stroke selection
+                    llBrushStrokes.setVisibility(View.VISIBLE);
+                    rvStrokes.setVisibility(View.VISIBLE);
                     // make selection from the Draw Tab
-                    selectDrawTab(selectedDrawTab);
+                    selectDrawTab(0);
+                    break;
+
+                case DOODLE: // Brush is same with Doodle except in brush you can select stroke types
+                    tvToolbarName.setText("Doodle");
+                    // show the second action bar
+                    animationHelper.moveFromTopToBottom(secondToolbar, 48f);
+                    // show the draw module
+                    animationHelper.moveFromBottomToTop(llDrawModule, 200f);
+
+                    // hide the stroke selection
+                    llBrushStrokes.setVisibility(View.GONE);
+                    rvStrokes.setVisibility(View.GONE);
+                    // make selection from the Draw Tab
+                    selectDrawTab(1);
                     break;
             }
         }
@@ -912,13 +944,13 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     break;
 
                 case BRUSH:
+                case DOODLE:
                     // hide the bottom view as well
                     animationHelper.moveToBottom(llDrawModule, 200f);
                     // hide the second action bar
                     animationHelper.moveToTop(secondToolbar, 48f);
                     selected = Menu.NONE;
                     break;
-
             }
         }
     }
@@ -1640,27 +1672,39 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
 
     //--------------------------------- D R A W   with   B R U S H  --------------------------------
+
     private void selectDrawTab(int selectedTab) {
         switch (selectedTab) {
             case 0: // Size Pickers
-                llBrushSizePickers.setVisibility(View.VISIBLE);
+                rvStrokes.setVisibility(View.VISIBLE);
+                llBrushSizePickers.setVisibility(View.GONE);
                 llBrushColorPickers.setVisibility(View.GONE);
                 llBrushAlphaPickers.setVisibility(View.GONE);
                 animateDrawTopSheetTabLayout(0);
                 break;
 
             case 1:
-                llBrushSizePickers.setVisibility(View.GONE);
-                llBrushColorPickers.setVisibility(View.VISIBLE);
+                rvStrokes.setVisibility(View.GONE);
+                llBrushSizePickers.setVisibility(View.VISIBLE);
+                llBrushColorPickers.setVisibility(View.GONE);
                 llBrushAlphaPickers.setVisibility(View.GONE);
                 animateDrawTopSheetTabLayout(1);
                 break;
 
             case 2:
+                rvStrokes.setVisibility(View.GONE);
+                llBrushSizePickers.setVisibility(View.GONE);
+                llBrushColorPickers.setVisibility(View.VISIBLE);
+                llBrushAlphaPickers.setVisibility(View.GONE);
+                animateDrawTopSheetTabLayout(2);
+                break;
+
+            case 3:
+                rvStrokes.setVisibility(View.GONE);
                 llBrushSizePickers.setVisibility(View.GONE);
                 llBrushColorPickers.setVisibility(View.GONE);
                 llBrushAlphaPickers.setVisibility(View.VISIBLE);
-                animateDrawTopSheetTabLayout(2);
+                animateDrawTopSheetTabLayout(3);
                 break;
         }
     }
@@ -1711,6 +1755,26 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 //            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
         });
 
+
+    }
+
+    private void setStrokesRecyclerView() {
+        strokes = new ArrayList<>();
+        strokes.add(new StrokeModel(R.drawable.brush_strokes, true));
+        strokes.add(new StrokeModel(R.drawable.brush));
+        strokes.add(new StrokeModel(R.drawable.ic_brush));
+        strokes.add(new StrokeModel(R.drawable.ic_brush_image));
+
+        strokeAdapter = new StrokeAdapter(context, strokes, this);
+        strokesLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
+        rvStrokes.setHasFixedSize(true);
+        rvStrokes.setLayoutManager(strokesLayoutManager);
+        rvStrokes.setAdapter(strokeAdapter);
+    }
+
+
+    @Override
+    public void onStrokeSelected(int position) {
 
     }
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?><!-- *********** Developed by Drudots Technology ************ -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="@dimen/_88sdp"
     android:background="@color/app_background"
@@ -14,9 +15,32 @@
         android:paddingHorizontal="@dimen/_8sdp">
 
         <LinearLayout
+            android:id="@+id/ll_brush_strokes"
+            android:layout_width="@dimen/_48sdp"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_47sdp"
+                android:padding="@dimen/_13sdp"
+                android:src="@drawable/brush_strokes"
+                app:tint="@color/white" />
+
+            <View
+                android:id="@+id/brush_line_4"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_1sdp"
+                android:background="@color/app_color"
+                android:visibility="visible" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/ll_brush_size"
             android:layout_width="@dimen/_48sdp"
             android:layout_height="match_parent"
+            android:layout_toEndOf="@id/ll_brush_strokes"
             android:orientation="vertical">
 
             <ImageView
@@ -31,7 +55,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_1sdp"
                 android:background="@color/app_color"
-                android:visibility="visible" />
+                android:visibility="gone" />
 
         </LinearLayout>
 
@@ -88,9 +112,15 @@
             android:src="@drawable/ic_baseline_undo_24"
             app:tint="@color/white" />
 
-
-
     </RelativeLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_strokes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_4sdp"
+        tools:itemCount="1"
+        tools:listitem="@layout/design_stroke" />
 
     <LinearLayout
         android:id="@+id/ll_size_pickers"
@@ -99,7 +129,7 @@
         android:layout_marginHorizontal="@dimen/_12sdp"
         android:gravity="center"
         android:orientation="vertical"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <com.drudotstech.customgallery.mycanvas.my_color_picker.NumberPicker
             android:id="@+id/size_picker"

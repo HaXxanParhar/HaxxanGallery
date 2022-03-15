@@ -21,6 +21,7 @@ import com.drudotstech.customgallery.R;
 import com.drudotstech.customgallery.mycanvas.models.CanvasState;
 import com.drudotstech.customgallery.mycanvas.models.DrawingType;
 import com.drudotstech.customgallery.mycanvas.models.LayerModel;
+import com.drudotstech.customgallery.mycanvas.models.MyPoint;
 import com.drudotstech.customgallery.utils.MyUtils;
 
 import java.util.ArrayList;
@@ -108,7 +109,7 @@ public class MyCanvas extends View {
      */
     private boolean showDeleteArea = false;
     /**
-     * anti alise paint for bitmaps
+     * anti alias paint for bitmaps
      */
     private Paint bitmapPaint;
     /**
@@ -199,22 +200,42 @@ public class MyCanvas extends View {
     /**
      * Current X coordinate of touch while drawing
      */
-    private float mCurX = 0f;
+    private float curX = 0f;
 
     /**
      * Current Y coordinate of touch while drawing
      */
-    private float mCurY = 0f;
+    private float curY = 0f;
 
     /**
      * Temp variable to store the Path of a drawing. This path will be added to layer once single drawing is over
      */
-    private Path mPath;
+    private Path path;
 
     /**
      * The Paint for the drawing. User will change this paint. Paint will be added to layer once single drawing is over
      */
     private Paint drawingPaint;
+
+    /**
+     * Stroke head of the Brush, will be drawn at start and end of a single drawing
+     */
+    private Bitmap strokeHeadBitmap;
+
+    /**
+     * Stroke line of the Brush, will be drawn between start and end of a single drawing
+     */
+    private Bitmap strokeLineBitmap;
+
+    /**
+     * List of points for drawing bitmaps
+     */
+    private List<MyPoint> points;
+
+    /**
+     * Matrix for rotating the image
+     */
+    private Matrix rotator;
 
 
     // Listeners
@@ -283,7 +304,7 @@ public class MyCanvas extends View {
 
         deleteCenterPoint = new PointF(deleteIconRect.centerX(), deleteIconRect.centerY());
 
-        mPath = new Path();
+        path = new Path();
         drawingPaint = new Paint();
         drawingPaint.setStrokeWidth(5);
         drawingPaint.setStyle(Paint.Style.STROKE);
@@ -295,6 +316,13 @@ public class MyCanvas extends View {
 //        drawingPaint.setStrokeCap(Paint.Cap.BUTT);
 //        drawingPaint.setStrokeJoin(Paint.Join.ROUND);
 //        drawingPaint.setStrokeCap(Paint.Cap.ROUND);
+
+        points = new ArrayList<>();
+
+        strokeHeadBitmap = CanvasUtils.getBitmapFromVector(context, R.drawable.ic_circle);
+        strokeLineBitmap = CanvasUtils.getBitmapFromVector(context, R.drawable.ic_circle2);
+
+        rotator = new Matrix();
     }
 
     public void setStrokeCap() {
@@ -450,6 +478,7 @@ public class MyCanvas extends View {
 
     public void disableDrawing() {
         isDrawingEnabled = false;
+        points.clear();
     }
 
     // endregion
@@ -461,7 +490,6 @@ public class MyCanvas extends View {
         // draw blur background
         if (backgroundBitmap != null)
             canvas.drawBitmap(backgroundBitmap, null, screenRect, bitmapPaint);
-
 
         // draw rest of the layers
         if (layers != null && !layers.isEmpty()) {
@@ -500,7 +528,19 @@ public class MyCanvas extends View {
                         break;
 
                     case LayerModel.DRAWING:
-                        canvas.drawPath(layer.path, layer.paint);
+//                        canvas.drawPath(layer.path, layer.paint);
+
+                        for (MyPoint point : points) {
+                            if (point.isHead()) {
+                                canvas.drawBitmap(strokeHeadBitmap, point.x, point.y, null);
+                            } else {
+//                                canvas.save();
+//                                canvas.rotate(angle, point.x, point.y);
+                                canvas.drawBitmap(strokeLineBitmap, point.x, point.y, null);
+//                                canvas.restore();
+                            }
+                        }
+
                         break;
                 }
             }
@@ -522,14 +562,18 @@ public class MyCanvas extends View {
 
                         // If drawing on canvas is enabled
                         if (isDrawingEnabled) {
-                            mPath = new Path();
+                            path = new Path();
                             // create a new drawing layer and add in layers
-                            LayerModel layerModel = new LayerModel(getDrawingPaintCopy(), mPath);
+                            LayerModel layerModel = new LayerModel(getDrawingPaintCopy(), path);
                             layers.add(layerModel);
 
-                            mPath.moveTo(x, y);
-                            mCurX = x;
-                            mCurY = y;
+                            MyPoint point = new MyPoint(x, y, true);
+                            points.add(point);
+
+                            path.moveTo(x, y);
+                            curX = x;
+                            curY = y;
+
 
                             invalidate();
                         } else {
@@ -656,7 +700,11 @@ public class MyCanvas extends View {
 
                         if (isDrawingEnabled) {
                             final LayerModel layerModel = layers.get(layers.size() - 1);
-                            layerModel.path.lineTo(mCurX, mCurY);
+                            layerModel.path.lineTo(curX, curY);
+
+                            MyPoint point = new MyPoint(x, y, true);
+                            points.add(point);
+
                             invalidate();
 
                         } else {
@@ -718,24 +766,46 @@ public class MyCanvas extends View {
                     case MotionEvent.ACTION_MOVE:
 
                         if (isDrawingEnabled) {
+                            double distance = BrushStore.distanceBetween(curX, curY, x, y);
+                            double radius = strokeHeadBitmap.getWidth() / 2f;
+                            int count = (int) Math.ceil(distance / radius);
+                            float angle = (float) BrushStore.angleOf(curX, curY, x, y);
+                            Log.d("ANGLE_TEST", "--------------------------------------------------------------------------------------");
+                            Log.d("ANGLE_TEST", String.format("%d ------> %.2f , %.2f  -   %.2f , %.2f  ====> of %.2f distance with  %.2f degree", count, curX, curY, x, y, distance, angle));
 
-                            float dx = Math.abs(x - mCurX);
-                            float dy = Math.abs(y - mCurY);
-
-                            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-                                final LayerModel layer = layers.get(layers.size() - 1);
-
-                                // set the brush stroke if drawing type is BRUSH
-                                if (drawingType == DrawingType.BRUSH) {
-                                    BrushStore.straightLine(mCurX, mCurY, x, y, layer);
-                                } else {
-                                    mPath.quadTo(mCurX, mCurY, (x + mCurX) / 2, (y + mCurY) / 2);
-                                }
-
-                                mCurX = x;
-                                mCurY = y;
-                                invalidate();
+                            // adding the point in between these two points
+                            int i = 1;
+                            while (!(radius * i >= distance)) {
+                                final float x2 = (float) BrushStore.getX2(angle, radius * i, curX);
+                                final float y2 = (float) BrushStore.getY2(angle, radius * i, curY);
+                                MyPoint point = new MyPoint(x2, y2, false);
+                                Log.d("ANGLE_TEST", String.format("---> %d --> %.2f , %.2f of %f", i, x2, y2, radius * i));
+                                points.add(point);
+                                i++;
                             }
+                            // adding the last point
+                            MyPoint point = new MyPoint(x, y, false);
+                            points.add(point);
+
+                            // updating the current x,y values
+                            curX = x;
+                            curY = y;
+                            invalidate();
+
+//                            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+//                                final LayerModel layer = layers.get(layers.size() - 1);
+//
+//                                // set the brush stroke if drawing type is BRUSH
+//                                if (drawingType == DrawingType.BRUSH) {
+//                                    BrushStore.straightLine(curX, curY, x, y, layer);
+//                                } else {
+//                                    path.quadTo(curX, curY, (x + curX) / 2, (y + curY) / 2);
+//                                }
+//
+//                                curX = x;
+//                                curY = y;
+//                                invalidate();
+//                            }
                         } else {
 
                             // only perform actions if view is clicked/selected
