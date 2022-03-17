@@ -127,14 +127,18 @@
 
     <ImageView
         android:id="@+id/btn_show"
-        android:layout_width="@dimen/_42sdp"
-        android:layout_height="@dimen/_42sdp"
+        android:layout_width="@dimen/_36sdp"
+        android:layout_height="@dimen/_36sdp"
         android:layout_above="@id/rl_bottom"
         android:layout_alignParentEnd="true"
         android:layout_margin="@dimen/_24sdp"
-        android:background="@drawable/bg_grey_circle"
+        android:alpha=".6"
+        android:background="@drawable/bg_black_circle"
+        android:clickable="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         android:padding="@dimen/_8sdp"
-        android:src="@drawable/edited_image"
+        android:src="@drawable/ic_before_after"
         android:visibility="gone"
         app:tint="@color/white" />
 

@@ -11,7 +11,9 @@
     <color name="grey">#B9B6B6</color>
     <color name="greyer">#8C8C8C</color>
     <color name="app_color">#FC504D</color>
-<color name="app_background">#181818</color>
+    <color name="app_color_dark">#AA2725</color>
+    <color name="app_color_light">#C86361</color>
+    <color name="app_background">#181818</color>
 
     <!--    colors used in day/night theme   -->
     <color name="day_background">#FFFFFF</color>

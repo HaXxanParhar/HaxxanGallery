@@ -12,7 +12,6 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.drudotstech.customgallery.R;
-import com.drudotstech.customgallery.mycanvas.models.AlignModel;
 import com.drudotstech.customgallery.mycanvas.models.StrokeModel;
 
 import java.util.List;
@@ -48,7 +47,7 @@ public class StrokeAdapter extends RecyclerView.Adapter<StrokeAdapter.ViewHolder
 
         if (current != null) {
 
-            holder.imageView.setImageResource(current.getSrc());
+            holder.imageView.setImageResource(current.getHeadSrc());
 
             setSelected(holder, current.isSelected());
 

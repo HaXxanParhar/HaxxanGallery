@@ -3,12 +3,21 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_brush3.xml" value="0.179" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_brush4.xml" value="0.2345" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_brush5.xml" value="0.179" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_brush_image.xml" value="0.1815" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_brush_stroke_01.xml" value="0.2345" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_center_brush1.xml" value="0.2345" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_circle.xml" value="0.172" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_circle2.xml" value="0.1815" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_launcher_foreground.xml" value="0.157" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_left_brush1.xml" value="0.2345" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_right_brush1.xml" value="0.2345" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_rounded_rectangle.xml" value="0.172" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_text.xml" value="0.166" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_whitener_brush.xml" value="0.2345" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/drawable/ic_whitener_brush2.xml" value="0.1995" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/mipmap-anydpi-v26/ic_launcher.xml" value="0.157" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/dimen/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.157" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.157" />
@@ -16,6 +25,7 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/bg_app_background_rounded.xml" value="0.164" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/bg_aspect_not_selected.xml" value="0.2" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/bg_aspect_selected.xml" value="0.2" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/bg_black_circle.xml" value="0.2345" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/bg_black_rounded.xml" value="0.164" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/bg_black_rounded_selected.xml" value="0.164" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/drawable/bg_black_transparent.xml" value="0.3" />
@@ -97,6 +107,7 @@
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_select_media.xml" value="0.26979166666666665" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_stickers.xml" value="0.26481481481481484" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_test_draw_view.xml" value="0.23300555793073963" />
+        <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_test_gif.xml" value="0.23005487547488393" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/activity_view_image.xml" value="0.15" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/crop_image_activity.xml" value="0.2838541666666667" />
         <entry key="..\:/Android_Projects/CustomGallery/app/src/main/res/layout/crop_image_view.xml" value="0.2838541666666667" />

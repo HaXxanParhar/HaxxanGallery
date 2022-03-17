@@ -1,5 +1,9 @@
 <resources>
 
+    <declare-styleable name="MyGifView">
+        <attr name="android:src" format="reference" />
+    </declare-styleable>
+
     <declare-styleable name="CropImageView">
         <attr name="cropGuidelines">
             <enum name="off" value="0" />

@@ -9,6 +9,8 @@ import com.drudotstech.customgallery.filters.FilterType;
 import com.drudotstech.customgallery.mycanvas.CanvasUtils;
 import com.drudotstech.customgallery.mycanvas.StickerView;
 
+import java.util.List;
+
 /********** Developed by Drudots Technology **********
  * Created by : usman on 2/7/2022 at 5:43 PM
  ******************************************************/
@@ -23,6 +25,7 @@ public class LayerModel {
     public static final int CONTRAST = 6;
     public static final int WARMTH = 7;
     public static final int DRAWING = 8;
+    public static final int DOODLE = 9;
 
     public int type;
 
@@ -43,16 +46,30 @@ public class LayerModel {
     public StickerView sticker;
     public TextInfo textInfo;
 
-    // When type is drawing
+    // When type is doodle
     public Path path;
+
+    // When type is drawing
+    public List<MyPoint> points;
+    public Bitmap head;
+
 
     public LayerModel(StickerView sticker) {
         this.type = STICKER;
         this.sticker = sticker;
     }
 
-    public LayerModel(Paint paint, Path path) {
+
+
+    public LayerModel(List<MyPoint> points, Bitmap head,Paint paint) {
         type = DRAWING;
+        this.points = points;
+        this.head = head;
+        this.paint = paint;
+    }
+
+    public LayerModel(Paint paint, Path path) {
+        type = DOODLE;
         this.paint = paint;
         this.path = path;
     }

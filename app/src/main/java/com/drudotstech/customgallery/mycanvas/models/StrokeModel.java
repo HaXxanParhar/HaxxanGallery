@@ -6,17 +6,18 @@ package com.drudotstech.customgallery.mycanvas.models;
 
 
 public class StrokeModel {
-    private int src;
+    private int headSrc;
     private boolean isSelected;
 
     public StrokeModel(int src) {
-        this.src = src;
+        this.headSrc = src;
     }
 
     public StrokeModel(int src, boolean isSelected) {
-        this.src = src;
+        this.headSrc = src;
         this.isSelected = isSelected;
     }
+
 
     public boolean isSelected() {
         return isSelected;
@@ -26,11 +27,11 @@ public class StrokeModel {
         isSelected = selected;
     }
 
-    public int getSrc() {
-        return src;
+    public int getHeadSrc() {
+        return headSrc;
     }
 
-    public void setSrc(int src) {
-        this.src = src;
+    public void setHeadSrc(int headSrc) {
+        this.headSrc = headSrc;
     }
 }

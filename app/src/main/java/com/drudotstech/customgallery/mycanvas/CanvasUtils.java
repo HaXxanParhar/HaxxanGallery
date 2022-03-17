@@ -221,6 +221,15 @@ public class CanvasUtils {
         return bitmap;
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public static Bitmap getBitmapFromVector(VectorDrawable vectorDrawable, int width, int height) {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        vectorDrawable.draw(canvas);
+        return bitmap;
+    }
+
     public static Bitmap getBitmapFromVector(Context context, int drawableId) {
         Log.e(TAG, "getBitmap: 2");
         Drawable drawable = ContextCompat.getDrawable(context, drawableId);
@@ -233,10 +242,23 @@ public class CanvasUtils {
         }
     }
 
+    public static Bitmap getBitmapFromVector(Context context, int drawableId, int width, int height) {
+        Log.e(TAG, "getBitmap: 2");
+        Drawable drawable = ContextCompat.getDrawable(context, drawableId);
+        if (drawable instanceof BitmapDrawable) {
+            return BitmapFactory.decodeResource(context.getResources(), drawableId);
+        } else if (drawable instanceof VectorDrawable) {
+            return getBitmapFromVector((VectorDrawable) drawable, width, height);
+        } else {
+            throw new IllegalArgumentException("unsupported drawable type");
+        }
+    }
+
     public static Bitmap getBitmapFromPNG(Context context, int drawableId, float width, float height) {
         final Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), drawableId);
         return getResizedBitmap(bitmap, width, height);
     }
+
 
     public static RectF toRectF(Rect rect) {
         return new RectF(rect.left, rect.top, rect.right, rect.bottom);

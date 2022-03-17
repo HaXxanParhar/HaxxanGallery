@@ -6,21 +6,22 @@ package com.drudotstech.customgallery.mycanvas.models;
 
 
 public class MyPoint {
-    public float x,y;
+    public float x, y;
     public float angle;
-    private boolean isHead;
-    private float dx,dy;
+    private PointType pointType;
+    private float dx, dy;
 
 
     public MyPoint(float x, float y) {
         this.x = x;
         this.y = y;
+        this.pointType = PointType.MIDDLE;
     }
 
-    public MyPoint(float x, float y, boolean isHead) {
+    public MyPoint(float x, float y, PointType pointType) {
         this.x = x;
         this.y = y;
-        this.isHead = isHead;
+        this.pointType = pointType;
     }
 
     public float getDx() {
@@ -39,13 +40,23 @@ public class MyPoint {
         this.dy = dy;
     }
 
-    public boolean isHead() {
-        return isHead;
+    public PointType getPointType() {
+        return pointType;
     }
 
-    public void setHead(boolean head) {
-        isHead = head;
+    public void setPointType(PointType pointType) {
+        this.pointType = pointType;
     }
 
+    public boolean isFirst() {
+        return pointType == PointType.FIRST;
+    }
 
+    public boolean isLast() {
+        return pointType == PointType.LAST;
+    }
+
+    public boolean isMiddle() {
+        return pointType == PointType.MIDDLE;
+    }
 }

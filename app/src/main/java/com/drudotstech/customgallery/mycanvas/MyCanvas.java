@@ -10,6 +10,8 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -22,6 +24,7 @@ import com.drudotstech.customgallery.mycanvas.models.CanvasState;
 import com.drudotstech.customgallery.mycanvas.models.DrawingType;
 import com.drudotstech.customgallery.mycanvas.models.LayerModel;
 import com.drudotstech.customgallery.mycanvas.models.MyPoint;
+import com.drudotstech.customgallery.mycanvas.models.PointType;
 import com.drudotstech.customgallery.utils.MyUtils;
 
 import java.util.ArrayList;
@@ -61,6 +64,7 @@ public class MyCanvas extends View {
      */
     private static final int CLICK_DELAY = 200;
     private static final float TOUCH_TOLERANCE = 0;
+    private static final float BRUSH_SIZE_MULTIPLIER = 1.6f;
 
     /**
      * The Context
@@ -87,39 +91,48 @@ public class MyCanvas extends View {
      * distance from where the deletion area will show
      */
     private float showDeleteAreaDistance = deleteIconSize * 4;
+
     /**
      * delete area
      */
     private RectF deleteRect;
+
     /**
      * delete icon rect
      */
     private RectF deleteIconRect;
+
     /**
      * paint for the delete area
      */
     private Paint deletePaint;
+
     /**
      * center point of deleted aread. This will be used to calculate the distance of
      * sticker from the center of deleted area
      */
     private PointF deleteCenterPoint;
+
     /**
      * flag to indicate whether to show delete area
      */
     private boolean showDeleteArea = false;
+
     /**
      * anti alias paint for bitmaps
      */
     private Paint bitmapPaint;
+
     /**
      * the rect of the main bitmap
      */
     private RectF mainRect;
+
     /**
      * background i.e. blurred image
      */
     private Bitmap backgroundBitmap;
+
     /**
      * List of layers
      */
@@ -128,14 +141,17 @@ public class MyCanvas extends View {
      * object of selected layer
      */
     private LayerModel selectedLayer;
+
     /**
      * the index of the selected layer from the layers list
      */
     private int selectedLayerIndex = INVALID_VALUE;
+
     /**
      * rect differences from the touch x,y. useful for drawing bitmap accurately after touch
      */
     private float dLeft, dTop, dRight, dBottom;
+
     /**
      * variable to store the time of action down
      */
@@ -152,40 +168,47 @@ public class MyCanvas extends View {
      * according to finger2, draw according to finger1
      *  */
     private boolean isFirstPointerUpNow;
+
     /**
      * First touch point. This is used to calculate the scale and rotation angle
      */
     private PointF firstPoint = new PointF();
+
     /**
      * Second touch point after first touch. I.e. when user uses two fingers to pinch
      * This is used to calculate the scale and rotation angle
      */
     private PointF secondPoint = new PointF();
+
     /**
      * secondary touch pointer identifier 1
      */
     private int pointerId1 = INVALID_VALUE;
+
     /**
      * secondary touch pointer identifier 2
      */
     private int pointerId2 = INVALID_VALUE;
+
     /**
      * angle of rotation
      */
     private float angle;
+
     /**
      * to store starting scale before applying new scale
      */
     private float startingScale = INVALID_VALUE;
+
     /**
      * to store starting angle before applying new rotation
      */
     private float startingRotation = INVALID_VALUE;
+
     /**
      * Green paint to draw something in green
      */
     private Paint greenPaint;
-
 
     /**
      * Flag to indicate user is drawing.
@@ -218,14 +241,14 @@ public class MyCanvas extends View {
     private Paint drawingPaint;
 
     /**
-     * Stroke head of the Brush, will be drawn at start and end of a single drawing
+     * Stroke bitmap of the Brush,
      */
-    private Bitmap strokeHeadBitmap;
+    private Bitmap brushStrokeBitmap;
 
     /**
-     * Stroke line of the Brush, will be drawn between start and end of a single drawing
+     * drawable Id of the Stroke bitmap of the Brush
      */
-    private Bitmap strokeLineBitmap;
+    private int strokeDrawableId;
 
     /**
      * List of points for drawing bitmaps
@@ -233,9 +256,14 @@ public class MyCanvas extends View {
     private List<MyPoint> points;
 
     /**
-     * Matrix for rotating the image
+     * The size of the drawing bitmap.
      */
-    private Matrix rotator;
+    private float drawingSize = 12;
+
+    /**
+     * The bitmap to display when whitener is selected
+     */
+    private Bitmap whitenerBrush;
 
 
     // Listeners
@@ -251,6 +279,9 @@ public class MyCanvas extends View {
 
     // endregion
 
+    /**
+     * Constructor to initialize the view programmatically.
+     */
     public MyCanvas(Context context) {
         super(context);
         this.context = context;
@@ -267,8 +298,9 @@ public class MyCanvas extends View {
 
         bitmapPaint = new Paint();
         bitmapPaint.setAntiAlias(true);
-    }
 
+        whitenerBrush = CanvasUtils.getBitmapFromVector(context, R.drawable.ic_whitener_brush2);
+    }
 
     //region --> G E T T E R S   &   S E T T E R S <--
 
@@ -319,10 +351,8 @@ public class MyCanvas extends View {
 
         points = new ArrayList<>();
 
-        strokeHeadBitmap = CanvasUtils.getBitmapFromVector(context, R.drawable.ic_circle);
-        strokeLineBitmap = CanvasUtils.getBitmapFromVector(context, R.drawable.ic_circle2);
-
-        rotator = new Matrix();
+        strokeDrawableId = R.drawable.ic_brush_stroke_01;
+        brushStrokeBitmap = CanvasUtils.getBitmapFromVector(context, strokeDrawableId, (int) drawingSize, (int) drawingSize); //, drawingSize, drawingSize
     }
 
     public void setStrokeCap() {
@@ -330,45 +360,31 @@ public class MyCanvas extends View {
         drawingPaint.setStrokeJoin(Paint.Join.BEVEL);
     }
 
-    public void setWhitener() {
+    public void setWhitenerConfig() {
         drawingPaint.setStrokeJoin(Paint.Join.ROUND);
         drawingPaint.setStrokeCap(Paint.Cap.ROUND);
-        drawingPaint.setShadowLayer(20, 10, 10, drawingPaint.getColor());
-//        drawingPaint.setMaskFilter(new BlurMaskFilter(100, BlurMaskFilter.Blur.SOLID));
+        drawingPaint.setStyle(Paint.Style.STROKE);
+        drawingPaint.setStrokeWidth(drawingSize);
+        drawingPaint.setColor(Color.WHITE);
+        drawingPaint.setAlpha(4);
+        drawingPaint.setShadowLayer(40, 0, 0, Color.WHITE);
     }
 
-    public void setBothRound() {
+    public void setDoodleConfig() {
         drawingPaint.setStrokeJoin(Paint.Join.ROUND);
         drawingPaint.setStrokeCap(Paint.Cap.ROUND);
+        drawingPaint.setStyle(Paint.Style.STROKE);
+        drawingPaint.setStrokeWidth(drawingSize);
+        drawingPaint.setShadowLayer(0, 0, 0, Color.WHITE);
+        drawingPaint.setAlpha(255);
     }
 
-    public void setNoneRound() {
+    public void setBrushConfig() {
         drawingPaint.setStrokeJoin(Paint.Join.BEVEL);
         drawingPaint.setStrokeCap(Paint.Cap.SQUARE);
-    }
-
-    public Paint getDrawingPaintCopy() {
-        Paint paint = new Paint();
-        if (drawingPaint != null) {
-            paint.setStyle(drawingPaint.getStyle());
-            paint.setStrokeWidth(drawingPaint.getStrokeWidth());
-            paint.setColor(drawingPaint.getColor());
-//            paint.setColor(Color.WHITE);
-            paint.setAntiAlias(drawingPaint.isAntiAlias());
-            paint.setDither(drawingPaint.isDither());
-            paint.setStrokeJoin(drawingPaint.getStrokeJoin());
-            paint.setStrokeCap(drawingPaint.getStrokeCap());
-            paint.setMaskFilter(drawingPaint.getMaskFilter());
-//            paint.setShadowLayer(50, 0, 0, Color.WHITE);
-
-//            paint.setShadowLayer(
-//                    drawingPaint.getShadowLayerRadius(),
-//                    drawingPaint.getShadowLayerDx(),
-//                    drawingPaint.getShadowLayerDy(),
-//                    drawingPaint.getShadowLayerColor()
-//                    );
-        }
-        return paint;
+        drawingPaint.setStyle(Paint.Style.FILL);
+        drawingPaint.setAlpha(255);
+        drawingPaint.setShadowLayer(0, 0, 0, Color.WHITE);
     }
 
 
@@ -483,6 +499,9 @@ public class MyCanvas extends View {
 
     // endregion
 
+    /**
+     * This is where drawing is done. Drawing background, layers and much more
+     */
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -490,6 +509,7 @@ public class MyCanvas extends View {
         // draw blur background
         if (backgroundBitmap != null)
             canvas.drawBitmap(backgroundBitmap, null, screenRect, bitmapPaint);
+
 
         // draw rest of the layers
         if (layers != null && !layers.isEmpty()) {
@@ -527,26 +547,40 @@ public class MyCanvas extends View {
                         canvas.drawBitmap(firstLayer.mainBitmap, null, firstLayer.mainRect, layer.paint);
                         break;
 
-                    case LayerModel.DRAWING:
-//                        canvas.drawPath(layer.path, layer.paint);
+                    case LayerModel.DOODLE:
+                        canvas.drawPath(layer.path, layer.paint);
+                        break;
 
-                        for (MyPoint point : points) {
-                            if (point.isHead()) {
-                                canvas.drawBitmap(strokeHeadBitmap, point.x, point.y, null);
+                    case LayerModel.DRAWING:
+                        for (MyPoint point : layer.points) {
+                            if (point.isFirst()) {
+                                canvas.drawBitmap(layer.head, point.x, point.y, layer.paint);
+                            } else if (point.isLast()) {
+                                canvas.drawBitmap(layer.head, point.x, point.y, layer.paint);
                             } else {
 //                                canvas.save();
 //                                canvas.rotate(angle, point.x, point.y);
-                                canvas.drawBitmap(strokeLineBitmap, point.x, point.y, null);
+                                canvas.drawBitmap(layer.head, point.x, point.y, layer.paint);
 //                                canvas.restore();
                             }
                         }
-
                         break;
                 }
             }
         }
+
+        // draw whitener brush
+        if (whitenerBrush != null && isDrawingEnabled && drawingType == DrawingType.WHITENER) {
+            canvas.drawBitmap(whitenerBrush,
+                    curX - (whitenerBrush.getWidth() / 2f),
+                    curY - (whitenerBrush.getHeight() / 2f),
+                    null);
+        }
     }
 
+    /**
+     * To handle touch interactions i.e. touch down, touch move, touch up etc
+     */
     @Override
     @SuppressLint("ClickableViewAccessibility")
     public boolean onTouchEvent(MotionEvent event) {
@@ -562,22 +596,40 @@ public class MyCanvas extends View {
 
                         // If drawing on canvas is enabled
                         if (isDrawingEnabled) {
-                            path = new Path();
-                            // create a new drawing layer and add in layers
-                            LayerModel layerModel = new LayerModel(getDrawingPaintCopy(), path);
-                            layers.add(layerModel);
 
-                            MyPoint point = new MyPoint(x, y, true);
-                            points.add(point);
+                            // For Doodle, path is used to draw
+                            switch (drawingType) {
+                                case DOODLE:
+                                case WHITENER:
 
-                            path.moveTo(x, y);
+                                    // create a new path
+                                    path = new Path();
+                                    // create a new layer and add in layers
+                                    LayerModel layerModel = new LayerModel(new Paint(drawingPaint), path);
+                                    layers.add(layerModel);
+                                    path.moveTo(x, y);
+                                    break;
+
+
+                                // For Brush, points are used to draw Bitmaps
+                                case BRUSH:
+
+                                    // create new points list
+                                    List<MyPoint> points = new ArrayList<>();
+                                    MyPoint point = new MyPoint(x, y, PointType.FIRST);
+                                    points.add(point);
+
+                                    // create a new layer and add in layers
+                                    LayerModel model = new LayerModel(points, MyUtils.copyBitmap(brushStrokeBitmap), new Paint(drawingPaint));
+                                    layers.add(model);
+                                    break;
+                            }
+
+                            // update the current x,y coordinates
                             curX = x;
                             curY = y;
-
-
                             invalidate();
                         } else {
-
 
                             // note the action down time
                             actionDownTime = System.currentTimeMillis();
@@ -693,18 +745,26 @@ public class MyCanvas extends View {
                         startingScale = INVALID_VALUE;
                         Log.v("TEST_GESTURES", "ACTION_POINTER_UP p2 Cleared!");
                         isFirstPointerUpNow = true;
-
                         break;
 
                     case MotionEvent.ACTION_UP:
 
                         if (isDrawingEnabled) {
-                            final LayerModel layerModel = layers.get(layers.size() - 1);
-                            layerModel.path.lineTo(curX, curY);
 
-                            MyPoint point = new MyPoint(x, y, true);
-                            points.add(point);
+                            // add the last point in the path
+                            switch (drawingType) {
+                                case DOODLE:
+                                case WHITENER:
+                                    final LayerModel layerModel = layers.get(layers.size() - 1);
+                                    layerModel.path.lineTo(curX, curY);
+                                    break;
 
+                                // add the last point in the points list
+                                case BRUSH:
+                                    MyPoint point = new MyPoint(x, y, PointType.LAST);
+                                    points.add(point);
+                                    break;
+                            }
                             invalidate();
 
                         } else {
@@ -766,46 +826,43 @@ public class MyCanvas extends View {
                     case MotionEvent.ACTION_MOVE:
 
                         if (isDrawingEnabled) {
-                            double distance = BrushStore.distanceBetween(curX, curY, x, y);
-                            double radius = strokeHeadBitmap.getWidth() / 2f;
-                            int count = (int) Math.ceil(distance / radius);
-                            float angle = (float) BrushStore.angleOf(curX, curY, x, y);
-                            Log.d("ANGLE_TEST", "--------------------------------------------------------------------------------------");
-                            Log.d("ANGLE_TEST", String.format("%d ------> %.2f , %.2f  -   %.2f , %.2f  ====> of %.2f distance with  %.2f degree", count, curX, curY, x, y, distance, angle));
 
-                            // adding the point in between these two points
-                            int i = 1;
-                            while (!(radius * i >= distance)) {
-                                final float x2 = (float) BrushStore.getX2(angle, radius * i, curX);
-                                final float y2 = (float) BrushStore.getY2(angle, radius * i, curY);
-                                MyPoint point = new MyPoint(x2, y2, false);
-                                Log.d("ANGLE_TEST", String.format("---> %d --> %.2f , %.2f of %f", i, x2, y2, radius * i));
-                                points.add(point);
-                                i++;
+                            switch (drawingType) {
+                                case BRUSH:
+                                    final LayerModel lastLayer = getLastLayer();
+                                    double distance = BrushStore.distanceBetween(curX, curY, x, y);
+                                    double radius = brushStrokeBitmap.getWidth() / 2f;
+                                    int count = (int) Math.ceil(distance / radius);
+                                    float angle = (float) BrushStore.angleOf(curX, curY, x, y);
+                                    Log.d("ANGLE_TEST", "--------------------------------------------------------------------------------------");
+                                    Log.d("ANGLE_TEST", String.format("%d ------> %.2f , %.2f  -   %.2f , %.2f  ====> of %.2f distance with  %.2f degree", count, curX, curY, x, y, distance, angle));
+
+                                    // adding the point in between these two points
+                                    int i = 1;
+                                    while (!(radius * i >= distance)) {
+                                        final float x2 = (float) BrushStore.getX2(angle, radius * i, curX);
+                                        final float y2 = (float) BrushStore.getY2(angle, radius * i, curY);
+                                        MyPoint point = new MyPoint(x2, y2);
+                                        Log.d("ANGLE_TEST", String.format("---> %d --> %.2f , %.2f of %f", i, x2, y2, radius * i));
+                                        lastLayer.points.add(point);
+                                        i++;
+                                    }
+                                    // adding the last point
+                                    MyPoint point = new MyPoint(x, y);
+                                    lastLayer.points.add(point);
+                                    break;
+
+                                case WHITENER:
+                                case DOODLE:
+                                    // create a curve line from current x,y to next x,y
+                                    path.quadTo(curX, curY, (x + curX) / 2, (y + curY) / 2);
+                                    break;
                             }
-                            // adding the last point
-                            MyPoint point = new MyPoint(x, y, false);
-                            points.add(point);
 
-                            // updating the current x,y values
+                            // updating the current x,y coordinates
                             curX = x;
                             curY = y;
                             invalidate();
-
-//                            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-//                                final LayerModel layer = layers.get(layers.size() - 1);
-//
-//                                // set the brush stroke if drawing type is BRUSH
-//                                if (drawingType == DrawingType.BRUSH) {
-//                                    BrushStore.straightLine(curX, curY, x, y, layer);
-//                                } else {
-//                                    path.quadTo(curX, curY, (x + curX) / 2, (y + curY) / 2);
-//                                }
-//
-//                                curX = x;
-//                                curY = y;
-//                                invalidate();
-//                            }
                         } else {
 
                             // only perform actions if view is clicked/selected
@@ -995,7 +1052,8 @@ public class MyCanvas extends View {
         point.set(x, y);
     }
 
-    private float angleBetweenLines(PointF secondPoint, PointF firstPoint, PointF newSecondPoint, PointF nweFirstPoint) {
+    private float angleBetweenLines(PointF secondPoint, PointF firstPoint, PointF
+            newSecondPoint, PointF nweFirstPoint) {
         float angle1 = (float) Math.atan2((secondPoint.y - firstPoint.y), (secondPoint.x - firstPoint.x));
         float angle2 = (float) Math.atan2((newSecondPoint.y - nweFirstPoint.y), (newSecondPoint.x - nweFirstPoint.x));
 
@@ -1005,7 +1063,8 @@ public class MyCanvas extends View {
         return -angle;
     }
 
-    private float distanceBetweenLines(PointF secondPoint, PointF firstPoint, PointF newSecondPoint, PointF newFirstPoint) {
+    private float distanceBetweenLines(PointF secondPoint, PointF firstPoint, PointF
+            newSecondPoint, PointF newFirstPoint) {
         float beforeDistance = getDistanceBetweenPoints(secondPoint, firstPoint);
         float afterDistance = getDistanceBetweenPoints(newSecondPoint, newFirstPoint);
         final float diff = afterDistance - beforeDistance; // distance covered
@@ -1051,6 +1110,7 @@ public class MyCanvas extends View {
     // endregion
 
     // region  --> E F F E C T S <--
+
 
     public void rotateImage(int rotation) {
         if (layers != null && !layers.isEmpty() && layers.get(0).type == LayerModel.FILTER) {
@@ -1217,29 +1277,46 @@ public class MyCanvas extends View {
     }
 
     public void updateSize(int size) {
-        /**
-         * Stroke Size of the Drawing
+        /*
+          Stroke Size of the Drawing
          */
-        int drawingStrokeSize = Math.max(minSize, size);
+        drawingSize = Math.max(minSize, size);
+        if (drawingType == DrawingType.BRUSH)
+            drawingSize = drawingSize * BRUSH_SIZE_MULTIPLIER;// increase stroke size for brush
         if (drawingPaint == null) {
             init();
         } else {
-            drawingPaint.setStrokeWidth(drawingStrokeSize);
+            if (drawingType == DrawingType.DOODLE)// change the paint size
+                drawingPaint.setStrokeWidth(drawingSize);
+            else if (drawingType == DrawingType.BRUSH) { // change the bitmaps size
+                brushStrokeBitmap = CanvasUtils.getBitmapFromVector(context, R.drawable.ic_brush_stroke_01, (int) drawingSize, (int) drawingSize);
+            }
         }
         invalidate();
     }
 
     public void updateColor(int color) {
-        /**
-         * Stroke Color of the Drawing
+        /*
+          Stroke Color of the Drawing
          */
         if (drawingPaint == null) {
             init();
         } else {
-            drawingPaint.setColor(color);
+            if (drawingType == DrawingType.DOODLE) {
+                drawingPaint.setColor(color); // change the paint color
+                drawingPaint.setColorFilter(null);
+            } else if (drawingType == DrawingType.BRUSH) { // change the bitmap color by applying Tint
+                drawingPaint.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN));
+            }
         }
         invalidate();
     }
+
+    public void updateBrushStroke(int strokeDrawableId) {
+        this.strokeDrawableId = strokeDrawableId;
+        brushStrokeBitmap = CanvasUtils.getBitmapFromVector(context, strokeDrawableId, (int) drawingSize, (int) drawingSize); //, drawingSize, drawingSize
+    }
+
 
     //endregion
 

@@ -19,6 +19,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -165,6 +166,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     // -------------------------------------- V A R I A B L E S ------------------------------------
     private MyCanvas myCanvas;
     private CanvasState memento;
+    private CanvasState tempCanvasState;
     private LayerModel paintLayerMemento;
     private AnimationHelper animationHelper = null;
     private Bitmap tempBitmap;
@@ -187,7 +189,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private boolean scrolled = false;
     // endregion
 
-    @SuppressLint("CheckResult")
+    @SuppressLint({"CheckResult", "ClickableViewAccessibility"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -223,12 +225,25 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         //------------------------------------ A C T I O N S ---------------------------------------
 
-        findViewById(R.id.btn_show).setOnClickListener(view -> {
-            if (ivOriginal.getAlpha() == 0) {
-                ivOriginal.animate().setDuration(100).alpha(1);
-            } else {
-                ivOriginal.animate().setDuration(100).alpha(0);
+
+        // This is not working as intented. so Ignore this right now
+        findViewById(R.id.btn_show).setOnTouchListener((var v, @SuppressLint("ClickableViewAccessibility") var event) -> {
+            if (myCanvas != null && memento != null) {
+                switch (event.getActionMasked()) {
+
+                    case MotionEvent.ACTION_DOWN:
+                        tempCanvasState = myCanvas.getCurrentCanvasState();
+                        myCanvas.updateFromCanvasState(memento);
+                        break;
+
+                    case MotionEvent.ACTION_UP:
+                        myCanvas.updateFromCanvasState(tempCanvasState);
+                        break;
+
+                }
+                return true;
             }
+            return false;
         });
 
 
@@ -381,8 +396,9 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             selected = Menu.BRUSH;
             showSecondMenu(true);
             saveCurrentState();
+
             myCanvas.enableDrawing(true, DrawingType.BRUSH);
-            myCanvas.setNoneRound();
+            myCanvas.setBrushConfig();
             myCanvas.updateColor(brushHuePicker.getCurrentColor());
         });
 
@@ -395,17 +411,20 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             selected = Menu.DOODLE;
             showSecondMenu(true);
             saveCurrentState();
+
             myCanvas.enableDrawing(true, DrawingType.DOODLE);
-            myCanvas.setBothRound();
+            myCanvas.setDoodleConfig();
+            myCanvas.updateColor(brushHuePicker.getCurrentColor());
         });
 
         llWhitener.setOnClickListener(v -> {
             drawer.closeDrawer(GravityCompat.END);
-            selected = Menu.BRUSH;
+            selected = Menu.WHITENER;
             showSecondMenu(true);
             saveCurrentState();
+
             myCanvas.enableDrawing(true, DrawingType.WHITENER);
-            myCanvas.setWhitener();
+            myCanvas.setWhitenerConfig();
         });
 
         llBlemish.setOnClickListener(v -> {
@@ -414,7 +433,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             showSecondMenu(true);
             saveCurrentState();
             myCanvas.enableDrawing(true, DrawingType.WHITENER);
-            myCanvas.setNoneRound();
+            myCanvas.setBrushConfig();
         });
 
         llBrushStrokes.setOnClickListener(v -> {
@@ -446,6 +465,8 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 case ROTATE_FLIP:
                 case BLUR:
                 case BRUSH:
+                case DOODLE:
+                case WHITENER:
                     showSecondMenu(false);
                     myCanvas.disableDrawing();
                     break;
@@ -688,6 +709,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         });
     }
 
+
     //---------------------------------------  S E T U P  -----------------------------------------
 
     /**
@@ -877,6 +899,12 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     // make selection from the Draw Tab
                     selectDrawTab(1);
                     break;
+
+                case WHITENER: // Brush is same with Doodle except in brush you can select stroke types
+                    tvToolbarName.setText("Whitener");
+                    // show the second action bar
+                    animationHelper.moveFromTopToBottom(secondToolbar, 48f);
+                    break;
             }
         }
 
@@ -947,6 +975,12 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 case DOODLE:
                     // hide the bottom view as well
                     animationHelper.moveToBottom(llDrawModule, 200f);
+                    // hide the second action bar
+                    animationHelper.moveToTop(secondToolbar, 48f);
+                    selected = Menu.NONE;
+                    break;
+
+                case WHITENER:
                     // hide the second action bar
                     animationHelper.moveToTop(secondToolbar, 48f);
                     selected = Menu.NONE;
@@ -1052,6 +1086,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
 
     //----------------------------------------- F I L T E R S --------------------------------------
+
     private void setFiltersRecyclerView() {
         filters = new ArrayList<>();
         filters.add(new FilterModel(FilterType.NO_FILTER, "Original", R.drawable.image2, true));
@@ -1146,6 +1181,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
 
     //------------------------------------------  A D J U S T  -------------------------------------
+
     @SuppressLint("RestrictedApi")
     private void setSliderChangeListener() {
 
@@ -1223,6 +1259,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
 
     //----------------------------------------  S T I K E R S  -------------------------------------
+
     private void openBottomSheet(String location, String shortLocation) {
         if (widgetsBottomSheet == null)
             widgetsBottomSheet = new WidgetsBottomSheet(location, shortLocation, this);
@@ -1385,6 +1422,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
 
     //--------------------------------------  A D D   T E X T  -------------------------------------
+
     private void setTextColorPickerListeners() {
 
         // set default color picker values
@@ -1722,48 +1760,22 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     }
 
     private void setBrushPickersListeners() {
+        brushHuePicker.updatePosition(0);
+        brushAlphaPicker.updateBaseColor(brushHuePicker.getCurrentColor());
 
         brushHuePicker.connect(brushAlphaPicker);
         brushAlphaPicker.connect(brushHuePicker);
-//        brushSaturationPicker.connect(brushHuePicker, brushAlphaPicker);
 
-        brushSizePicker.setPositionChangeListener(position -> {
-            myCanvas.updateSize((int) (position / 3));
-//            brushView.setVisibility(View.VISIBLE);
-//            brushView.updateSize((int) (position / 3));
-//            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
-        });
-
-        brushHuePicker.setHueChangeListener((color) -> {
-            myCanvas.updateColor(color);
-//            brushView.setVisibility(View.VISIBLE);
-//            brushView.updateColor(color);
-//            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
-        });
-
-//        brushSaturationPicker.setSaturationChangeListener((color, saturation, value) -> {
-//            brushView.setVisibility(View.VISIBLE);
-//            brushView.updateColor(color);
-//            myCanvas.updateColor(color);
-//            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
-//        });
-
-        brushAlphaPicker.setAlphaChangeListener((color, alpha) -> {
-            myCanvas.updateColor(color);
-//            brushView.setVisibility(View.VISIBLE);
-//            brushView.updateColor(color);
-//            new Handler(Looper.getMainLooper()).postDelayed(() -> brushView.setVisibility(View.GONE), 5000);
-        });
-
-
+        brushSizePicker.setPositionChangeListener(position -> myCanvas.updateSize((int) (position / 3)));
+        brushHuePicker.setHueChangeListener((color) -> myCanvas.updateColor(color));
+        brushAlphaPicker.setAlphaChangeListener((color, alpha) -> myCanvas.updateColor(color));
     }
 
     private void setStrokesRecyclerView() {
         strokes = new ArrayList<>();
-        strokes.add(new StrokeModel(R.drawable.brush_strokes, true));
-        strokes.add(new StrokeModel(R.drawable.brush));
-        strokes.add(new StrokeModel(R.drawable.ic_brush));
-        strokes.add(new StrokeModel(R.drawable.ic_brush_image));
+        strokes.add(new StrokeModel(R.drawable.ic_brush_stroke_01, true));
+        strokes.add(new StrokeModel(R.drawable.ic_brush3));
+        strokes.add(new StrokeModel(R.drawable.ic_brush5));
 
         strokeAdapter = new StrokeAdapter(context, strokes, this);
         strokesLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
@@ -1772,9 +1784,9 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         rvStrokes.setAdapter(strokeAdapter);
     }
 
-
     @Override
     public void onStrokeSelected(int position) {
-
+        final StrokeModel strokeModel = strokes.get(position);
+        myCanvas.updateBrushStroke(strokeModel.getHeadSrc());
     }
 }
