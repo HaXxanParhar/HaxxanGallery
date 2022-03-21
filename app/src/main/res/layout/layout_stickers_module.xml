@@ -4,13 +4,13 @@
     android:layout_width="match_parent"
     android:layout_height="@dimen/_72sdp"
     android:layout_centerVertical="true"
+    android:background="@color/app_background"
     android:clickable="true"
     android:focusable="true"
-    android:background="@color/app_background"
     android:gravity="center_vertical"
     android:paddingHorizontal="@dimen/_8sdp"
     android:visibility="visible"
-    android:weightSum="3">
+    android:weightSum="4">
 
     <ImageView
         android:id="@+id/iv_widget"
@@ -38,6 +38,15 @@
         android:layout_weight="1"
         android:padding="@dimen/_12sdp"
         android:src="@drawable/happy"
+        app:tint="@color/white" />
+
+    <ImageView
+        android:id="@+id/iv_gif"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/_44sdp"
+        android:layout_weight="1"
+        android:padding="@dimen/_13sdp"
+        android:src="@drawable/ic_gif4"
         app:tint="@color/white" />
 
 

@@ -5,6 +5,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 
+import com.drudotstech.MyGifView;
 import com.drudotstech.customgallery.filters.FilterType;
 import com.drudotstech.customgallery.mycanvas.CanvasUtils;
 import com.drudotstech.customgallery.mycanvas.StickerView;
@@ -26,6 +27,7 @@ public class LayerModel {
     public static final int WARMTH = 7;
     public static final int DRAWING = 8;
     public static final int DOODLE = 9;
+    public static final int GIF = 10;
 
     public int type;
 
@@ -53,6 +55,9 @@ public class LayerModel {
     public List<MyPoint> points;
     public Bitmap head;
 
+    // When type is Gif
+    public MyGifView gifView;
+
 
     public LayerModel(StickerView sticker) {
         this.type = STICKER;
@@ -60,8 +65,7 @@ public class LayerModel {
     }
 
 
-
-    public LayerModel(List<MyPoint> points, Bitmap head,Paint paint) {
+    public LayerModel(List<MyPoint> points, Bitmap head, Paint paint) {
         type = DRAWING;
         this.points = points;
         this.head = head;
@@ -78,6 +82,11 @@ public class LayerModel {
         this.type = STICKER;
         this.sticker = sticker;
         this.textInfo = textInfo;
+    }
+
+    public LayerModel(MyGifView gifView) {
+        this.type = GIF;
+        this.gifView = gifView;
     }
 
     public LayerModel(Paint paint) {

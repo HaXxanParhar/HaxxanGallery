@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Movie;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
@@ -39,6 +40,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.drudotstech.TestGifActivity;
 import com.drudotstech.customgallery.BaseActivity;
 import com.drudotstech.customgallery.R;
 import com.drudotstech.customgallery.croppy.croppylib.main.BitmapResult;
@@ -50,7 +52,9 @@ import com.drudotstech.customgallery.filters.FilterTask;
 import com.drudotstech.customgallery.filters.FilterType;
 import com.drudotstech.customgallery.gallery.utils.GalleryConstants;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.EmojisBottomSheet;
+import com.drudotstech.customgallery.mycanvas.bottom_sheets.GifsBottomSheet;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectEmojiCallback;
+import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectGifCallback;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectStickerCallback;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.SelectWidgetCallback;
 import com.drudotstech.customgallery.mycanvas.bottom_sheets.StickersBottomSheet;
@@ -86,7 +90,7 @@ import java.util.List;
 @SuppressLint("SetTextI18n")
 public class EditorActivity extends BaseActivity implements FilterAdapter.FilterSelectionCallback,
         BlurBitmapCallback, SelectStickerCallback, FilterTask.ApplyFilterCallback, SelectWidgetCallback,
-        SelectEmojiCallback, TextFontAdapter.FontSelectionCallback, AddTextFragment.AddTextCallback,
+        SelectEmojiCallback, SelectGifCallback, TextFontAdapter.FontSelectionCallback, AddTextFragment.AddTextCallback,
         TextAlignAdapter.AlignmentSelectionCallback, StrokeAdapter.StrokeSelectionCallback {
 
     // region --> V A R I A B L E S <--
@@ -114,10 +118,11 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private int selectedFilterPosition;
 
     // Stickers module Views
-    private View llStickers, ivAddSticker, ivAddWidgets, ivAddEmoji;
+    private View llStickers, ivAddSticker, ivAddWidgets, ivAddEmoji, ivAddGifs;
     private StickersBottomSheet stickersBottomSheet;
     private WidgetsBottomSheet widgetsBottomSheet;
     private EmojisBottomSheet emojisBottomSheet;
+    private GifsBottomSheet gifsBottomSheet;
 
     // Adjust module Views
     private View llAdjust, llBrightness, llSaturation, llContrast, llWarmth, llSlider;
@@ -325,6 +330,12 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             emojisBottomSheet.show(getSupportFragmentManager(), "emojis");
         });
 
+        ivAddGifs.setOnClickListener(v -> {
+            if (gifsBottomSheet == null)
+                gifsBottomSheet = new GifsBottomSheet(this);
+            gifsBottomSheet.show(getSupportFragmentManager(), "gifs");
+        });
+
 
         // --------------- Text Module -----------------------
         ivText.setOnClickListener(v -> {
@@ -363,7 +374,13 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         // --------------- Drawer  -----------------------
         ivMore.setOnClickListener(v -> drawer.openDrawer(GravityCompat.END));
+
         ivCloseDrawer.setOnClickListener(v -> drawer.closeDrawer(GravityCompat.END));
+
+        llBlemish.setOnClickListener(v -> {
+            startActivity(new Intent(context, TestGifActivity.class));
+            overridePendingTransition(R.anim.right_to_left, R.anim.left_to_right);
+        });
 
 
         // ---------------  Rotate & Flip  -----------------------
@@ -425,15 +442,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
             myCanvas.enableDrawing(true, DrawingType.WHITENER);
             myCanvas.setWhitenerConfig();
-        });
-
-        llBlemish.setOnClickListener(v -> {
-            drawer.closeDrawer(GravityCompat.END);
-            selected = Menu.BRUSH;
-            showSecondMenu(true);
-            saveCurrentState();
-            myCanvas.enableDrawing(true, DrawingType.WHITENER);
-            myCanvas.setBrushConfig();
         });
 
         llBrushStrokes.setOnClickListener(v -> {
@@ -557,6 +565,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         ivAddSticker = findViewById(R.id.iv_sticker);
         ivAddWidgets = findViewById(R.id.iv_widget);
         ivAddEmoji = findViewById(R.id.iv_emoji);
+        ivAddGifs = findViewById(R.id.iv_gif);
 
         llText = findViewById(R.id.ll_text);
         llText.setVisibility(View.GONE);
@@ -1420,6 +1429,19 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         rvAlignments.setAdapter(textAlignAdapter);
     }
 
+    @Override
+    public void onGifSelected(Movie movie) {
+        final int toPx = (int) CanvasUtils.toPx(context, 400);
+        final StickerView stickerView = new StickerView(context, movie, myCanvas.screenRect);
+        // create layer and add in layers of canvas
+        LayerModel layer = new LayerModel(stickerView);
+        myCanvas.addLayer(layer);
+
+        // close the bottom sheet
+        if (gifsBottomSheet != null)
+            gifsBottomSheet.dismiss();
+    }
+
 
     //--------------------------------------  A D D   T E X T  -------------------------------------
 
@@ -1776,6 +1798,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         strokes.add(new StrokeModel(R.drawable.ic_brush_stroke_01, true));
         strokes.add(new StrokeModel(R.drawable.ic_brush3));
         strokes.add(new StrokeModel(R.drawable.ic_brush5));
+        strokes.add(new StrokeModel(R.drawable.ic_brush21));
 
         strokeAdapter = new StrokeAdapter(context, strokes, this);
         strokesLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
@@ -1789,4 +1812,5 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         final StrokeModel strokeModel = strokes.get(position);
         myCanvas.updateBrushStroke(strokeModel.getHeadSrc());
     }
+
 }

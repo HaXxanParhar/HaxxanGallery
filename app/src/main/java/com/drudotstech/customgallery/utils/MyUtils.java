@@ -130,6 +130,7 @@ public class MyUtils {
     }
 
     public static void setViewSize(Context context, View view, int widthDivision) {
+        if(view == null) return;
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
         ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
         float ratio = 1;

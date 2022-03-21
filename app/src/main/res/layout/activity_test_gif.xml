@@ -5,13 +5,27 @@
     android:layout_height="match_parent"
     tools:context="com.drudotstech.TestGifActivity">
 
-
-    <com.drudotstech.MyGifView
-        android:id="@+id/my_gif_view"
+    <RelativeLayout
+        android:id="@+id/canvas_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerInParent="true"
-        android:src="@drawable/illusion" />
+        android:layout_height="match_parent" />
+
+
+        <com.drudotstech.MyGifView
+            android:id="@+id/my_gif_view"
+            android:layout_width="@dimen/_100sdp"
+            android:layout_height="@dimen/_100sdp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/gif_3" />
+
+    <Button
+        android:id="@+id/add_gif"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="@dimen/_36sdp"
+        android:text="Add Gif" />
 
 
 </RelativeLayout>

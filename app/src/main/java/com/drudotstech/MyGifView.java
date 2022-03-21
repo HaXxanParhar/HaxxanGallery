@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Movie;
-import android.graphics.Paint;
-import android.graphics.drawable.AnimatedImageDrawable;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -21,31 +19,33 @@ import com.drudotstech.customgallery.mycanvas.CanvasUtils;
 
 public class MyGifView extends View {
 
-    private static final int DEFAULT_MOVIEW_DURATION = 1000;
-    AnimatedImageDrawable drawable;
+    private static final int DEFAULT_MOVIE_DURATION = 1000;
     private int resourceId;
     private Movie movie;
+    private long movieStart = 0;
+    private int currentAnimationTime = 0;
 
-    private long mMovieStart = 0;
-    private int mCurrentAnimationTime = 0;
-    private Paint paint = new Paint();
-
-    private float scale;
+    private float scale = 1;
     private float screenWidth, screenHeight, centerX, centerY;
     private float scaleX, scaleY;
     private float width, height;
 
+    private boolean isSelected;
 
-    public MyGifView(Context context) {
+
+    public MyGifView(Context context, float width, float height, int resourceId) {
         super(context);
-        resourceId = R.drawable.gif;
+        this.width = width;
+        this.height = height;
+        this.resourceId = resourceId;
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        init();
     }
 
     public MyGifView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.MyGifView);
-        resourceId = typedArray.getResourceId(R.styleable.MyGifView_android_src, R.drawable.gif);
+        resourceId = typedArray.getResourceId(R.styleable.MyGifView_android_src, R.drawable.default_gif);
         typedArray.recycle();
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     }
@@ -53,13 +53,14 @@ public class MyGifView extends View {
     public MyGifView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.MyGifView);
-        resourceId = typedArray.getResourceId(R.styleable.MyGifView_android_src, R.drawable.gif);
+        resourceId = typedArray.getResourceId(R.styleable.MyGifView_android_src, R.drawable.default_gif);
         typedArray.recycle();
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     }
 
     private void init() {
-        movie = Movie.decodeStream(getResources().openRawResource(resourceId));
+        if (resourceId != -1)
+            movie = Movie.decodeStream(getResources().openRawResource(resourceId));
         scaleX = width / movie.width();
         scaleY = height / movie.height();
 
@@ -74,6 +75,13 @@ public class MyGifView extends View {
 
     public void setImageResource(int resourceId) {
         this.resourceId = resourceId;
+        init();
+    }
+
+    public void setMovie(Movie movie) {
+        this.movie = movie;
+        this.resourceId = -1;
+        init();
     }
 
     @Override
@@ -99,23 +107,37 @@ public class MyGifView extends View {
     private void updateAnimationTime() {
         long now = android.os.SystemClock.uptimeMillis();
 
-        if (mMovieStart == 0) {
-            mMovieStart = now;
+        if (movieStart == 0) {
+            movieStart = now;
         }
         int dur = movie.duration();
         if (dur == 0) {
-            dur = DEFAULT_MOVIEW_DURATION;
+            dur = DEFAULT_MOVIE_DURATION;
         }
-        mCurrentAnimationTime = (int) ((now - mMovieStart) % dur);
+        currentAnimationTime = (int) ((now - movieStart) % dur);
     }
 
     private void drawGif(Canvas canvas) {
-        movie.setTime(mCurrentAnimationTime);
-
-//        canvas.save();
-        canvas.scale(scaleX, scaleY);
+        movie.setTime(currentAnimationTime);
+        canvas.scale(scale * scaleX, scale * scaleY);
         movie.draw(canvas, 0, 0);
-//        movie.draw(canvas, 0, 0);
-//        canvas.restore();
+    }
+
+    @Override
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+        isSelected = selected;
+    }
+
+    public float getScale() {
+        return scale;
+    }
+
+    public void setScale(float scale) {
+        this.scale = scale;
     }
 }

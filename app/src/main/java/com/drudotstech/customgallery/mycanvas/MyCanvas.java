@@ -265,6 +265,12 @@ public class MyCanvas extends View {
      */
     private Bitmap whitenerBrush;
 
+    /**
+     * Flag to indicate if the invalidate needs to be called again immediately after one pass.
+     * Used for redrawing GIFs again and again
+     */
+    private boolean invalidateAgain;
+
 
     // Listeners
     /**
@@ -344,10 +350,6 @@ public class MyCanvas extends View {
         drawingPaint.setAntiAlias(true);
         drawingPaint.setDither(true);
         drawingPaint.setAlpha(0xff);
-//        drawingPaint.setStrokeJoin(Paint.Join.BEVEL);
-//        drawingPaint.setStrokeCap(Paint.Cap.BUTT);
-//        drawingPaint.setStrokeJoin(Paint.Join.ROUND);
-//        drawingPaint.setStrokeCap(Paint.Cap.ROUND);
 
         points = new ArrayList<>();
 
@@ -428,6 +430,14 @@ public class MyCanvas extends View {
                 // also update the selected layer
                 selectedLayer = layers.get(layers.size() - 1);
                 break;
+
+//            case LayerModel.GIF:
+//                layer.gifView.setSelected(true);
+//                layers.add(layer);
+//                // also update the selected layer
+//                selectedLayer = layers.get(layers.size() - 1);
+//                break;
+
         }
         invalidate();
     }
@@ -541,6 +551,9 @@ public class MyCanvas extends View {
                         //Draw the View and clear the translation
                         layer.sticker.draw(canvas);
                         canvas.restore();
+
+                        // invalidate again if stickerView is a GIF
+                        invalidateAgain = layer.sticker.stickerType == StickerView.GIF;
                         break;
 
                     case LayerModel.PAINT:
@@ -565,6 +578,11 @@ public class MyCanvas extends View {
                             }
                         }
                         break;
+
+                    case LayerModel.GIF:
+                        if (layer.gifView != null)
+                            layer.gifView.draw(canvas);
+                        break;
                 }
             }
         }
@@ -576,6 +594,24 @@ public class MyCanvas extends View {
                     curY - (whitenerBrush.getHeight() / 2f),
                     null);
         }
+
+        if (invalidateAgain) {
+            invalidateAgain = false;
+            invalidate();
+        }
+    }
+
+    private void updateAnimationTime(StickerView sticker) {
+        long now = android.os.SystemClock.uptimeMillis();
+
+        if (sticker.movieStart == 0) {
+            sticker.movieStart = now;
+        }
+        int dur = sticker.movie.duration();
+        if (dur == 0) {
+            dur = StickerView.DEFAULT_MOVIE_DURATION;
+        }
+        sticker.currentAnimationTime = (int) ((now - sticker.movieStart) % dur);
     }
 
     /**
@@ -883,18 +919,6 @@ public class MyCanvas extends View {
 
                                 // updating the view position when Action Up | Translating
                                 RectF newRect = new RectF();
-
-                                // to draw the bitmap from center of the touch point
-//                    newRect.left = (int) (rawX - selectedView.rect.width() / 2.0);
-//                    newRect.top = (int) (rawY - selectedView.rect.height() / 2.0);
-//                    newRect.right = (int) newRect.left + selectedView.rect.width();
-//                    newRect.bottom = (int) newRect.top + selectedView.rect.height();
-
-                                // to draw the bitmap from left top of the touch point
-//                    newRect.left = (int) (rawX);
-//                    newRect.top = (int) (rawY);
-//                    newRect.right = (int) newRect.left + selectedView.width;
-//                    newRect.bottom = (int) newRect.top + selectedView.height;
 
                                 // to draw the bitmap on the same place as before and move accordingly
                                 newRect.left = (x - dLeft);
@@ -1289,7 +1313,7 @@ public class MyCanvas extends View {
             if (drawingType == DrawingType.DOODLE)// change the paint size
                 drawingPaint.setStrokeWidth(drawingSize);
             else if (drawingType == DrawingType.BRUSH) { // change the bitmaps size
-                brushStrokeBitmap = CanvasUtils.getBitmapFromVector(context, R.drawable.ic_brush_stroke_01, (int) drawingSize, (int) drawingSize);
+                brushStrokeBitmap = CanvasUtils.getBitmapFromVector(context, strokeDrawableId, (int) drawingSize, (int) drawingSize);
             }
         }
         invalidate();
