@@ -148,7 +148,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private NavigationView navigationView;
     private DrawerLayout drawer;
     private View ivCloseDrawer;
-    private View llRotate, llBlur, llBrush, llWhitener, llDoodle, llBlemish;
+    private View llRotate, llBlur, llBrush, llWhitener, llDoodle, llBlemish, llSharp;
 
     // Rotate Flip Views
     private View llRotateModule, llRotateImage, llFlipHorizontal, llFlipVertical;
@@ -406,6 +406,14 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             saveCurrentState();
         });
 
+        // ---------------  Sharp  -----------------------
+        llSharp.setOnClickListener(v -> {
+            drawer.closeDrawer(GravityCompat.END);
+            selected = Menu.SHARP;
+            showSecondMenu(true);
+            saveCurrentState();
+        });
+
 
         // ---------------  Draw with Brush  -----------------------
         llBrush.setOnClickListener(v -> {
@@ -472,6 +480,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                 case ADD_TEXT:
                 case ROTATE_FLIP:
                 case BLUR:
+                case SHARP:
                 case BRUSH:
                 case DOODLE:
                 case WHITENER:
@@ -594,6 +603,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         llDoodle = findViewById(R.id.ll_doodle);
         llWhitener = findViewById(R.id.ll_whitner);
         llBlemish = findViewById(R.id.ll_blemish);
+        llSharp = findViewById(R.id.ll_sharp);
 
         llRotateModule = findViewById(R.id.ll_rotate_module);
         llRotateImage = findViewById(R.id.ll_rotate_image);
@@ -662,7 +672,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
                             blurredBitmap = originalBitmap.copy(originalBitmap.getConfig(), true);
                             blurredBitmap = CanvasUtils.getScreenFillBitmap(context, blurredBitmap);
-                            new BlurTask(context, blurredBitmap, 32, EditorActivity.this).execute();
+                            new BlurTask(blurredBitmap, 32, EditorActivity.this).execute(context);
                         }
                     });
         } catch (Exception e) {
@@ -737,7 +747,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
             // blur task is called from the Slider/Blur menu
             else if (selected == Menu.BLUR) {
-                myCanvas.blur(bitmapResult.getBitmap(), blurAmount);
+                myCanvas.blur(blurAmount);
             }
         } else {
             final Exception exception = bitmapResult.getException();
@@ -782,7 +792,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             myCanvas.updateFromCanvasState(memento);
     }
 
-
     //---------------------------------  C O M M O N   M E T H O D S  ------------------------------
 
     private void saveChanges() {
@@ -793,6 +802,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
         // Show Views
         if (shouldShowSecondToolbar) {
+
 
             // update the toolbar title
             switch (selected) {
@@ -867,12 +877,31 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     break;
 
                 case BLUR:
-                    final LayerModel firstLayer = myCanvas.getFirstLayer();
+                    LayerModel firstLayer = myCanvas.getFirstLayer();
                     if (firstLayer != null) {
                         tvToolbarName.setText("Blur");
                         // show the slider from bottom
-                        slider.setValue(firstLayer.blurAmount);
-                        tvSlider.setText(firstLayer.blurAmount + "");
+                        int blurAmount = firstLayer.bitmapManager.getBlurValue();
+                        if (blurAmount == -1) blurAmount = 0;
+                        slider.setValue(blurAmount);
+                        tvSlider.setText(blurAmount + "");
+                        showSlider(true);
+                        // show the second action bar
+                        animationHelper.moveFromTopToBottom(secondToolbar, 48f);
+                    } else {
+                        selected = Menu.NONE;
+                    }
+                    break;
+
+                case SHARP:
+                    firstLayer = myCanvas.getFirstLayer();
+                    if (firstLayer != null) {
+                        tvToolbarName.setText("Sharpen");
+                        // show the slider from bottom
+                        int sharpValue = (int) firstLayer.bitmapManager.getSharpValue();
+                        if (sharpValue == -1) sharpValue = 0;
+                        slider.setValue(sharpValue);
+                        tvSlider.setText(sharpValue + "");
                         showSlider(true);
                         // show the second action bar
                         animationHelper.moveFromTopToBottom(secondToolbar, 48f);
@@ -973,12 +1002,14 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     break;
 
                 case BLUR:
+                case SHARP:
                     // hide the slider
                     showSlider(false);
                     // hide the second action bar
                     animationHelper.moveToTop(secondToolbar, 48f);
                     selected = Menu.NONE;
                     break;
+
 
                 case BRUSH:
                 case DOODLE:
@@ -1023,6 +1054,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         } else if (selected != Menu.NONE) {
             revertBackToPreviousState();
             showSecondMenu(false);
+            myCanvas.disableDrawing();
             // todo : unselect all the layers of the canvas
         } else {
             showSaveChangesPopup();
@@ -1068,9 +1100,10 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         myCanvas.setDrawingCacheEnabled(true);
         myCanvas.buildDrawingCache();
         final Bitmap editedBitmap = myCanvas.getDrawingCache();
+        Bitmap bitmap = CanvasUtils.createBitmap(editedBitmap);
         myCanvas.setDrawingCacheEnabled(false);
 
-        final Uri uri = FileUtils.insertImage(context, getContentResolver(), editedBitmap, "Edited_Image", "edited image");
+        final Uri uri = FileUtils.insertImage(context, getContentResolver(), bitmap, "Edited_Image", "edited image");
         if (uri == null) {
             Toast.makeText(context, "inserted uri is null", Toast.LENGTH_SHORT).show();
             return;
@@ -1099,20 +1132,24 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
     private void setFiltersRecyclerView() {
         filters = new ArrayList<>();
         filters.add(new FilterModel(FilterType.NO_FILTER, "Original", R.drawable.image2, true));
+        filters.add(new FilterModel("Masterpiece", R.drawable.image2, 16.50f, 32.64f, -18.28f, false));
+        filters.add(new FilterModel("Gorgeous", R.drawable.image2, 16.87f, 14.70f, -12.02f, false));
+        filters.add(new FilterModel("Love Tale", R.drawable.image2, 28.81f, 13.17f, 11.26f, false));
+        filters.add(new FilterModel("Memory", R.drawable.image2, 24.33f, 0, 0, true));
+        filters.add(new FilterModel("Refreshing", R.drawable.image2, 20.23f, 50.20f, -19.28f, false));
+        filters.add(new FilterModel("Paradise", R.drawable.image2, -17.09f, 21.57f, -36.84f, false));
+        filters.add(new FilterModel("Warm Welcome", R.drawable.image2, 50.83f, 0f, 26.53f, false));
+        filters.add(new FilterModel("Epic Black", R.drawable.image2, -53f, 0, 0, true));
+        filters.add(new FilterModel("Cosmic", R.drawable.image2, 48.59f, 40.65f, -6.30f, false));
+        filters.add(new FilterModel("Mesmerising", R.drawable.image2, 24.33f, 54f, 12f, false));
+        filters.add(new FilterModel("Old School", R.drawable.image2, -24f, 0, 0, true));
         filters.add(new FilterModel(FilterType.DEEP_BLUE, "Deep Blue", R.drawable.image));
         filters.add(new FilterModel(FilterType.RAINBOW, "Rainbow", R.drawable.image1));
-        filters.add(new FilterModel(FilterType.ANTHONY, "Anthony", R.drawable.image3));
+        filters.add(new FilterModel(FilterType.ANTHONY, "Mystical", R.drawable.image3));
+        filters.add(new FilterModel(FilterType.FILTER1, "Inspiring", R.drawable.image1));
         filters.add(new FilterModel(FilterType.MARK, "Magical", R.drawable.image));
-        filters.add(new FilterModel(FilterType.SUMMER, "Summer", R.drawable.image3));
         filters.add(new FilterModel(FilterType.WINTER, "Winter", R.drawable.image));
-        filters.add(new FilterModel(FilterType.FILTER1, "Inspiring", R.drawable.image1));
         filters.add(new FilterModel(FilterType.FILTER2, "Energetic", R.drawable.image3));
-        filters.add(new FilterModel(FilterType.MARK, "Fabulous", R.drawable.image));
-        filters.add(new FilterModel(FilterType.SUMMER, "Summer", R.drawable.image3));
-        filters.add(new FilterModel(FilterType.WINTER, "Winter", R.drawable.image));
-        filters.add(new FilterModel(FilterType.FILTER1, "Inspiring", R.drawable.image1));
-        filters.add(new FilterModel(FilterType.FILTER2, "Energetic", R.drawable.image3));
-
 
         filterAdapter = new FilterAdapter(context, filters, this);
         filtersLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
@@ -1134,11 +1171,8 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         FilterModel filter = filters.get(position);
         filterType = filter.getFilterType();
 
-        // create a temp bitmap from original bitmap & apply filter to temp bitmap
-        Bitmap tempBitmap = CanvasUtils.getScreenFitBitmap(context, originalBitmap);
-
-        // apply filter
-        new FilterTask(context, tempBitmap, filterType, this).execute();
+        // Apply filter
+        myCanvas.applyFilter(filter);
 
         // to keep the filters recyclerView in center
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
@@ -1146,7 +1180,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         int first = filtersLayoutManager.findFirstVisibleItemPosition();
 
         RecyclerView.ViewHolder holder = rvFilters.findViewHolderForAdapterPosition(first);
-        if (null == holder) {
+        if (holder == null) {
             Log.d("FILTER_RV", " ----------- Starting View at " + position + " is NUll --------- ");
             return;
         }
@@ -1155,7 +1189,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         int startX = firstView.getRight();
 
         holder = rvFilters.findViewHolderForAdapterPosition(position);
-        if (null == holder) {
+        if (holder == null) {
             Log.d("FILTER_RV", " ----------- View at " + position + " is NUll --------- ");
             return;
         }
@@ -1200,6 +1234,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
                     brightness = value;
                     tvSlider.setText(((int) brightness) + "");
                     myCanvas.adjustColor(brightness, LayerModel.BRIGHTNESS);
+//                    myCanvas.sharp(brightness / 20);
                     break;
 
                 case CONTRAST:
@@ -1230,14 +1265,25 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
 
             @Override
             public void onStopTrackingTouch(@NonNull Slider slider) {
+                LayerModel firstLayer = myCanvas.getFirstLayer();
                 switch (selected) {
                     case BLUR:
-                        final LayerModel firstLayer = myCanvas.getFirstLayer();
                         if (firstLayer != null) {
                             blurAmount = (int) slider.getValue();
                             tvSlider.setText(blurAmount + "");
-                            Bitmap tempBitmap = originalBitmap.copy(originalBitmap.getConfig(), true);
-                            new BlurTask(context, tempBitmap, blurAmount / 4, EditorActivity.this).execute();
+                            final int value = blurAmount;
+                            Toast.makeText(context, "Blur : " + value, Toast.LENGTH_SHORT).show();
+                            myCanvas.blur(value);
+                        }
+                        break;
+
+                    case SHARP:
+                        if (firstLayer != null) {
+                            int sharpAmount = (int) slider.getValue();
+                            tvSlider.setText(sharpAmount + "");
+                            final int value = sharpAmount;
+                            Toast.makeText(context, "Sharp : " + value, Toast.LENGTH_SHORT).show();
+                            myCanvas.sharp(value);
                         }
                         break;
                 }
@@ -1680,6 +1726,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         final AddTextFragment fragment = new AddTextFragment(this, this, blurredBitmap, textInfo);
         getSupportFragmentManager()
                 .beginTransaction()
+                .setCustomAnimations(R.anim.enter_from_bottom, R.anim.exit_to_bottom, R.anim.enter_from_bottom, R.anim.exit_to_bottom)
                 .add(R.id.fragment_container_editor, fragment)
                 .addToBackStack("add_text")
                 .commit();
@@ -1692,6 +1739,7 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
         final AddTextFragment fragment = new AddTextFragment(this, this, blurredBitmap, textInfo, text);
         getSupportFragmentManager()
                 .beginTransaction()
+                .setCustomAnimations(R.anim.enter_from_bottom, R.anim.exit_to_bottom, R.anim.enter_from_bottom, R.anim.exit_to_bottom)
                 .add(R.id.fragment_container_editor, fragment)
                 .addToBackStack("edit_text")
                 .commit();
@@ -1729,7 +1777,6 @@ public class EditorActivity extends BaseActivity implements FilterAdapter.Filter
             myCanvas.invalidate();
         }
     }
-
 
     //--------------------------------- D R A W   with   B R U S H  --------------------------------
 

@@ -11,13 +11,11 @@ import com.drudotstech.customgallery.R;
 import com.drudotstech.customgallery.ScriptC_blue;
 import com.drudotstech.customgallery.ScriptC_filter1;
 import com.drudotstech.customgallery.ScriptC_histEq;
-import com.drudotstech.customgallery.ScriptC_warm;
 import com.drudotstech.customgallery.utils.MyUtils;
 
 /********** Developed by Drudots Technology **********
  * Created by : usman on 1/27/2022 at 4:29 PM
  ******************************************************/
-
 
 public class FilterUtils {
 
@@ -43,9 +41,6 @@ public class FilterUtils {
             case DEEP_BLUE:
             case WINTER:
                 return deepBlue(res, rs, allocationA, allocationB);
-
-            case SUMMER:
-                return summer(res, rs, allocationA, allocationB);
 
             case HDR:
                 return histogramEqualization(res, rs, allocationA, allocationB);
@@ -223,23 +218,6 @@ public class FilterUtils {
         return res;
     }
 
-    private static Bitmap summer(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
-        //Create script from rs file.
-        ScriptC_warm histEqScript = new ScriptC_warm(rs);
-
-        //Call the first kernel.
-        histEqScript.forEach_root(allocationA, allocationB);
-
-        //Copy script result into bitmap
-        allocationB.copyTo(res);
-
-        //Destroy everything to free memory
-        allocationA.destroy();
-        allocationB.destroy();
-        histEqScript.destroy();
-        rs.destroy();
-        return res;
-    }
 
     private static Bitmap histogramEqualization(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
         //Create script from rs file.

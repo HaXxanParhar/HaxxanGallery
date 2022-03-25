@@ -20,7 +20,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="right"
             android:layout_marginStart="@dimen/_30sdp"
-            android:background="#B3000000">
+            android:background="#99000000">
 
             <include layout="@layout/layout_more_features" />
 

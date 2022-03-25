@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "com.drudotstech.customgallery"
-        minSdk 23
+        minSdk 24
         targetSdk 31
         versionCode 1
         versionName "1.0"
@@ -72,8 +72,6 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
 
     // Avi loading to show loading
-    implementation 'com.wang.avi:library:2.1.3'
-    // AvLoading
     implementation 'com.wang.avi:library:2.1.3'
 
 

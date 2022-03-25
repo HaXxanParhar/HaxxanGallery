@@ -12,33 +12,65 @@ import com.drudotstech.customgallery.R;
 import com.drudotstech.customgallery.ScriptC_blue;
 import com.drudotstech.customgallery.ScriptC_filter1;
 import com.drudotstech.customgallery.ScriptC_histEq;
-import com.drudotstech.customgallery.ScriptC_warm;
 import com.drudotstech.customgallery.croppy.croppylib.main.BitmapResult;
 import com.drudotstech.customgallery.utils.MyUtils;
+import com.drudotstech.filterfactory.ScriptC_filter;
 
 /********** Developed by Drudots Technology **********
  * Created by : usman on 1/27/2022 at 4:29 PM
  ******************************************************/
 
 
-public class FilterTask extends AsyncTask<Void, Void, BitmapResult> {
+public class FilterTask extends AsyncTask<Context, Void, BitmapResult> {
 
-    private Context context;
-    private Bitmap image;
-    private FilterType filterType;
+    private final Bitmap image;
+    private final FilterType filterType;
     private ApplyFilterCallback applyFilterCallback;
 
-    public FilterTask(Context context, Bitmap image, FilterType filterType, ApplyFilterCallback applyFilterCallback) {
-        this.context = context;
+    private float y, cb, cr;
+    private boolean isBW;
+
+
+    public FilterTask(Bitmap image, FilterModel filterModel, ApplyFilterCallback applyFilterCallback) {
+        this.image = image;
+        this.filterType = filterModel.getFilterType();
+        this.y = filterModel.getY();
+        this.cb = filterModel.getCb();
+        this.cr = filterModel.getCr();
+        this.isBW = filterModel.isBlackWhite();
+        this.applyFilterCallback = applyFilterCallback;
+    }
+
+    public FilterTask(Bitmap image, FilterModel filterModel) {
+        this.image = image;
+        this.filterType = filterModel.getFilterType();
+        this.y = filterModel.getY();
+        this.cb = filterModel.getCb();
+        this.cr = filterModel.getCr();
+        this.isBW = filterModel.isBlackWhite();
+    }
+
+    public FilterTask(Bitmap image, FilterType filterType, ApplyFilterCallback applyFilterCallback) {
         this.image = image;
         this.filterType = filterType;
         this.applyFilterCallback = applyFilterCallback;
     }
 
+    public FilterTask(Bitmap image, ApplyFilterCallback applyFilterCallback, float y, float cb, float cr, boolean isBW) {
+        this.image = image;
+        this.filterType = FilterType.YCBCR;
+        this.applyFilterCallback = applyFilterCallback;
+        this.y = y;
+        this.cb = cb;
+        this.cr = cr;
+        this.isBW = isBW;
+    }
+
     @Override
-    protected BitmapResult doInBackground(Void... voids) {
+    protected BitmapResult doInBackground(Context... params) {
         try {
-            Bitmap bitmap = applyFilter();
+            Context context = params[0];
+            Bitmap bitmap = applyFilter(context);
             return new BitmapResult(true, bitmap);
         } catch (Exception e) {
             return new BitmapResult(false, e);
@@ -48,10 +80,11 @@ public class FilterTask extends AsyncTask<Void, Void, BitmapResult> {
     @Override
     protected void onPostExecute(BitmapResult bitmapResult) {
         super.onPostExecute(bitmapResult);
-        applyFilterCallback.onFilterApplied(bitmapResult);
+        if (applyFilterCallback != null)
+            applyFilterCallback.onFilterApplied(bitmapResult);
     }
 
-    public Bitmap applyFilter() {
+    public Bitmap applyFilter(Context context) {
 
         //Create new bitmap
         Bitmap res = image.copy(image.getConfig(), true);
@@ -70,12 +103,12 @@ public class FilterTask extends AsyncTask<Void, Void, BitmapResult> {
             case NO_FILTER:
                 return image;
 
+            case YCBCR:
+                return filterWithYcbcr(res, rs, allocationA, allocationB);
+
             case DEEP_BLUE:
             case WINTER:
                 return deepBlue(res, rs, allocationA, allocationB);
-
-            case SUMMER:
-                return summer(res, rs, allocationA, allocationB);
 
             case HDR:
                 return histogramEqualization(res, rs, allocationA, allocationB);
@@ -98,6 +131,26 @@ public class FilterTask extends AsyncTask<Void, Void, BitmapResult> {
         }
 
         return image;
+    }
+
+    private Bitmap filterWithYcbcr(Bitmap bitmap, RenderScript renderScript, Allocation allocationIn, Allocation allocationOut) {
+
+        ScriptC_filter script = new ScriptC_filter(renderScript);
+        script.set_dY(y);
+        script.set_dCb(cb);
+        script.set_dCr(cr);
+
+        if (isBW)
+            script.set_isBW(1);
+        else
+            script.set_isBW(0);
+
+        final Bitmap copy = bitmap.copy(bitmap.getConfig(), true);
+        script.forEach_root(allocationIn, allocationOut);
+        allocationOut.copyTo(copy);
+//        bitmap.recycle(); // todo: uncomment this to see if we need to recycle or not
+
+        return copy;
     }
 
     private Bitmap filter1(Context context, Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
@@ -237,24 +290,6 @@ public class FilterTask extends AsyncTask<Void, Void, BitmapResult> {
     private Bitmap deepBlue(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
         //Create script from rs file.
         ScriptC_blue histEqScript = new ScriptC_blue(rs);
-
-        //Call the first kernel.
-        histEqScript.forEach_root(allocationA, allocationB);
-
-        //Copy script result into bitmap
-        allocationB.copyTo(res);
-
-        //Destroy everything to free memory
-        allocationA.destroy();
-        allocationB.destroy();
-        histEqScript.destroy();
-        rs.destroy();
-        return res;
-    }
-
-    private Bitmap summer(Bitmap res, RenderScript rs, Allocation allocationA, Allocation allocationB) {
-        //Create script from rs file.
-        ScriptC_warm histEqScript = new ScriptC_warm(rs);
 
         //Call the first kernel.
         histEqScript.forEach_root(allocationA, allocationB);

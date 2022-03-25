@@ -2,6 +2,7 @@ package com.drudotstech;
 
 import android.os.Bundle;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -16,7 +17,11 @@ public class ViewImageActivity extends AppCompatActivity {
         setContentView(R.layout.activity_view_image);
 
         ImageView imageView = findViewById(R.id.iv_image);
+        TextView textView = findViewById(R.id.tv_path);
+
         String media = getIntent().getStringExtra("image");
+
+        textView.setText(media);
         Glide.with(this).load(media).into(imageView);
     }
 }

@@ -1,34 +1,25 @@
-package com.drudotstech.customgallery.croppy.croppylib.main;
+package com.drudotstech.customgallery.filters;
 
 import android.graphics.Bitmap;
 
 /********** Developed by Drudots Technology **********
- * Created by : Usman on 1/31/2022 at 7:36 PM
+ * Created by : usman on 2/25/2022 at 2:18 PM
  ******************************************************/
 
 
-public class BitmapResult {
+public class FilterResult {
+    boolean status;
+    Bitmap bitmap;
+    Exception exception;
 
-    private boolean status;
-    private Bitmap bitmap;
-    private Exception exception;
-
-    public BitmapResult(boolean status, Bitmap bitmap) {
+    public FilterResult(boolean status, Bitmap bitmap) {
         this.status = status;
         this.bitmap = bitmap;
     }
 
-    public BitmapResult(boolean status, Exception exception) {
+    public FilterResult(boolean status, Exception exception) {
         this.status = status;
         this.exception = exception;
-    }
-
-    public Bitmap getBitmap() {
-        return bitmap;
-    }
-
-    public void setBitmap(Bitmap bitmap) {
-        this.bitmap = bitmap;
     }
 
     public boolean isStatus() {
@@ -37,6 +28,14 @@ public class BitmapResult {
 
     public void setStatus(boolean status) {
         this.status = status;
+    }
+
+    public Bitmap getBitmap() {
+        return bitmap;
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmap = bitmap;
     }
 
     public Exception getException() {

@@ -259,6 +259,10 @@ public class CanvasUtils {
         return getResizedBitmap(bitmap, width, height);
     }
 
+    public static Bitmap getBitmapFromPNG(Context context, int drawableId) {
+        return BitmapFactory.decodeResource(context.getResources(), drawableId);
+    }
+
 
     public static RectF toRectF(Rect rect) {
         return new RectF(rect.left, rect.top, rect.right, rect.bottom);

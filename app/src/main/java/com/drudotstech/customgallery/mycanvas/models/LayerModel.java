@@ -8,6 +8,7 @@ import android.graphics.RectF;
 import com.drudotstech.MyGifView;
 import com.drudotstech.customgallery.filters.FilterType;
 import com.drudotstech.customgallery.mycanvas.CanvasUtils;
+import com.drudotstech.customgallery.mycanvas.BitmapManager;
 import com.drudotstech.customgallery.mycanvas.StickerView;
 
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.List;
 
 public class LayerModel {
     public static final int STICKER = 1;
-    public static final int FILTER = 2;
+    public static final int MAIN_LAYER = 2;
     public static final int PAINT = 3;
     public static final int BRIGHTNESS = 4;
     public static final int SATURATION = 5;
@@ -32,7 +33,8 @@ public class LayerModel {
     public int type;
 
     // when type is Filter
-    public Bitmap mainBitmap;
+    public Bitmap bitmap;
+    public BitmapManager bitmapManager;
     public FilterType filterType;
     public RectF mainRect;
     public int blurAmount;
@@ -107,12 +109,13 @@ public class LayerModel {
         this.hue = hue;
     }
 
-    public LayerModel(Bitmap mainBitmap, RectF rectF, FilterType filterType) {
-        this.type = FILTER;
-        this.mainBitmap = mainBitmap;
+    public LayerModel(Bitmap bitmap, RectF rectF, FilterType filterType) {
+        this.type = MAIN_LAYER;
+        this.bitmap = bitmap;
         this.mainRect = rectF;
         this.filterType = filterType;
         this.blurAmount = 0;
+        bitmapManager = new BitmapManager(bitmap);
     }
 
     public LayerModel copy() {
@@ -124,8 +127,8 @@ public class LayerModel {
                     copy.textInfo = textInfo.copy();
                 break;
 
-            case FILTER:
-                copy = new LayerModel(CanvasUtils.copyBitmap(mainBitmap), mainRect, filterType);
+            case MAIN_LAYER:
+                copy = new LayerModel(CanvasUtils.copyBitmap(bitmap), mainRect, filterType);
                 break;
 
             case PAINT:

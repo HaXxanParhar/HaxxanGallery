@@ -19,5 +19,6 @@ public enum Menu {
     BLUR,
     BRUSH,
     DOODLE,
-    WHITENER
+    WHITENER,
+    SHARP
 }

@@ -31,7 +31,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.drudotstech.ViewImageActivity;
 import com.drudotstech.customgallery.R;
 import com.drudotstech.customgallery.crop.CropImage;
-import com.drudotstech.customgallery.crop.MyCropActivity;
 import com.drudotstech.customgallery.croppy.croppylib.Croppy;
 import com.drudotstech.customgallery.croppy.croppylib.main.CropRequest;
 import com.drudotstech.customgallery.croppy.croppylib.main.CroppyTheme;
@@ -46,7 +45,6 @@ import com.drudotstech.customgallery.mycanvas.EditorActivity;
 import com.drudotstech.customgallery.utils.FileUtils;
 import com.google.android.material.snackbar.Snackbar;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -123,7 +121,11 @@ public class AllPicturesActivity extends AppCompatActivity implements PicturesAd
                         String media = data.getStringExtra(GalleryConstants.MEDIA_PATH);
                         String type = data.getStringExtra(GalleryConstants.MEDIA_TYPE);
                         String uriString = data.getStringExtra(GalleryConstants.MEDIA_URI);
-                        setResultAndClose(media, uriString, type);
+
+                        Intent intent = new Intent(context, ViewImageActivity.class);
+                        intent.putExtra("image", media);
+                        startActivity(intent);
+//                        setResultAndClose(media, uriString, type);
                     }
 
                     // when no results are returned, hence keep this activity opened (do nothing)

@@ -18,12 +18,10 @@ import java.util.List;
 public class CanvasState {
 
 
-    private Bitmap backgroundBitmap;
     private List<LayerModel> layers;
 
 
     public CanvasState(Bitmap backgroundBitmap, List<LayerModel> layers) {
-        this.backgroundBitmap = backgroundBitmap.copy(backgroundBitmap.getConfig(), true);
         this.layers = new ArrayList<>();
         for (LayerModel layer : layers) {
             if (layer.type == LayerModel.STICKER) {
@@ -33,14 +31,6 @@ public class CanvasState {
                 this.layers.add(layer.copy());
             }
         }
-    }
-
-    public Bitmap getBackgroundBitmap() {
-        return backgroundBitmap;
-    }
-
-    public void setBackgroundBitmap(Bitmap backgroundBitmap) {
-        this.backgroundBitmap = backgroundBitmap;
     }
 
     public List<LayerModel> getLayers() {

@@ -5,12 +5,14 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Movie;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.Nullable;
 
 import com.drudotstech.customgallery.R;
 import com.drudotstech.customgallery.mycanvas.CanvasUtils;
+import com.drudotstech.customgallery.mycanvas.models.PlayStatus;
 
 /********** Developed by Drudots Technology **********
  * Created by : usman on 3/17/2022 at 4:11 PM
@@ -31,6 +33,7 @@ public class MyGifView extends View {
     private float width, height;
 
     private boolean isSelected;
+    private PlayStatus playStatus = PlayStatus.STOPPED;
 
 
     public MyGifView(Context context, float width, float height, int resourceId) {
@@ -45,7 +48,7 @@ public class MyGifView extends View {
     public MyGifView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.MyGifView);
-        resourceId = typedArray.getResourceId(R.styleable.MyGifView_android_src, R.drawable.default_gif);
+        resourceId = typedArray.getResourceId(R.styleable.MyGifView_android_src, R.drawable.loading10);
         typedArray.recycle();
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     }
@@ -53,7 +56,7 @@ public class MyGifView extends View {
     public MyGifView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.MyGifView);
-        resourceId = typedArray.getResourceId(R.styleable.MyGifView_android_src, R.drawable.default_gif);
+        resourceId = typedArray.getResourceId(R.styleable.MyGifView_android_src, R.drawable.loading10);
         typedArray.recycle();
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     }
@@ -97,10 +100,10 @@ public class MyGifView extends View {
     protected void onDraw(Canvas canvas) {
         if (movie != null) {
             updateAnimationTime();
+            Log.d("TEST_MOVIE", String.format("Time : %d ---> %d", movie.duration(), currentAnimationTime));
             drawGif(canvas);
-            invalidate();
-        } else {
-            drawGif(canvas);
+            if (playStatus == PlayStatus.PLAYING)
+                invalidate();
         }
     }
 
@@ -139,5 +142,28 @@ public class MyGifView extends View {
 
     public void setScale(float scale) {
         this.scale = scale;
+    }
+
+    public void play() {
+        if (movie == null) return;
+        playStatus = PlayStatus.PLAYING;
+        invalidate();
+    }
+
+    public void pause() {
+        if (movie == null) return;
+        playStatus = PlayStatus.PAUSED;
+        invalidate();
+    }
+
+    public void stop() {
+        if (movie == null) return;
+        playStatus = PlayStatus.STOPPED;
+        movieStart = 0;
+        requestLayout();
+    }
+
+    public boolean isPlaying() {
+        return playStatus == PlayStatus.PLAYING;
     }
 }

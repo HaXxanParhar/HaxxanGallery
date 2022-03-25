@@ -108,7 +108,7 @@ class ImageCropFragment : Fragment(), SelectAspectRatioCallback, BlurBitmapCallb
                 binding.rlLoading.visibility = View.VISIBLE
 
                 val newBitmap = it.bitmap?.copy(it.bitmap.config, true)
-                BlurTask(context, newBitmap, 22, this).execute()
+                BlurTask( newBitmap, 22, this).execute(context)
             })
     }
 

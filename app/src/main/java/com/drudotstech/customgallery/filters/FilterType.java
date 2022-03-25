@@ -9,11 +9,11 @@ public enum FilterType {
     NO_FILTER,
     DEEP_BLUE,
     WINTER,
-    SUMMER,
     ANTHONY,
     RAINBOW,
     MARK,
     FILTER1,
     FILTER2,
-    HDR
+    HDR,
+    YCBCR,
 }

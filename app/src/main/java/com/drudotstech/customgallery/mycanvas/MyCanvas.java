@@ -20,6 +20,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.drudotstech.customgallery.R;
+import com.drudotstech.customgallery.filters.FilterModel;
 import com.drudotstech.customgallery.mycanvas.models.CanvasState;
 import com.drudotstech.customgallery.mycanvas.models.DrawingType;
 import com.drudotstech.customgallery.mycanvas.models.LayerModel;
@@ -63,30 +64,42 @@ public class MyCanvas extends View {
      * the delay (ms) between action down and up that will count as click
      */
     private static final int CLICK_DELAY = 200;
-    private static final float TOUCH_TOLERANCE = 0;
+
+    /**
+     * The increase in the size of brush. Doodle will have the given size but for brush it will increase time multiplier
+     */
     private static final float BRUSH_SIZE_MULTIPLIER = 1.6f;
 
     /**
      * The Context
      */
     private final Context context;
-    private final int minSize = 1;
+
+    /**
+     * The minimum size a of brush i.e. Brush, Doodle, Whitener
+     */
+    private final int minBrushSize = 1;
+
     /**
      * rect of the canvas
      */
     public RectF screenRect;
+
     /**
      * Flag to indicate whether sticker selection is enabled
      */
     private boolean isSelectionEnabled = true;
+
     /**
      * delete bitmap
      */
     private Bitmap deleteBitmap;
+
     /**
      * delete icon size
      */
     private float deleteIconSize = 60f;
+
     /**
      * distance from where the deletion area will show
      */
@@ -157,7 +170,7 @@ public class MyCanvas extends View {
      */
     private long actionDownTime;
 
-    // for rotation & scaling
+    //------------- for rotation & scaling -----------------
     /* flag to indicate if second finger (touch pointer) is on screen or not. No on Screen = True.
      * this is used to avoid accidentally moving the sticker when pointers changes.
      * I.e. When user touch finger1 the sticker will be drawn according to finger1 coordinates,
@@ -209,6 +222,8 @@ public class MyCanvas extends View {
      * Green paint to draw something in green
      */
     private Paint greenPaint;
+
+    //------------- for brush and drawing  -----------------
 
     /**
      * Flag to indicate user is drawing.
@@ -315,20 +330,21 @@ public class MyCanvas extends View {
     }
 
     public void init() {
+
         final ViewGroup.LayoutParams layoutParams = getLayoutParams();
         final int width = layoutParams.width;
         final int height = layoutParams.height;
         screenRect = new RectF(0, 0, width, height);
 
         // create a rect for delete area
-        float heightOffset = height * 0.10f; // to get the 10% of the height
-        float widthOffset = width * 0.25f; // to get the 25% of the width
-        float left = (width / 2.0f) - (widthOffset / 2.0f);
-        float right = (width / 2.0f) + (widthOffset / 2.0f);
-        float top = height - heightOffset;
-        float bottom = height;
-        final int bottomMargin = 40;
-        deleteRect = new RectF(left, top - bottomMargin, right, bottom - bottomMargin);
+        float heightOffset = height * 0.20f; // to get the 20% of the height
+        float widthOffset = width * 0.10f; // to get the 10% of the width
+        float left = width - widthOffset;
+        float right = width;
+        float top = height / 2f - (heightOffset / 2f);
+        float bottom = height / 2f + (heightOffset / 2f);
+        final int rightMargin = 40;
+        deleteRect = new RectF(left - rightMargin, top, right - rightMargin, bottom);
 
         float halfSize = deleteIconSize / 2;
         deleteBitmap = CanvasUtils.getBitmapFromPNG(context, R.drawable.trash, deleteIconSize, deleteIconSize);
@@ -409,10 +425,10 @@ public class MyCanvas extends View {
 
         // add new layer in the layers
         switch (layer.type) {
-            case LayerModel.FILTER:
+            case LayerModel.MAIN_LAYER:
                 mainRect = layer.mainRect;
                 // if filter layer is already added in the layers
-                if (layers.size() >= 1 && layers.get(0) != null && layers.get(0).type == LayerModel.FILTER) {
+                if (layers.size() >= 1 && layers.get(0) != null && layers.get(0).type == LayerModel.MAIN_LAYER) {
                     // set the layer on the existing layer
                     layers.set(0, layer);
                 } else {
@@ -468,7 +484,6 @@ public class MyCanvas extends View {
                 }
             }
         }
-        backgroundBitmap = canvasState.getBackgroundBitmap();
         invalidate();
     }
 
@@ -510,7 +525,7 @@ public class MyCanvas extends View {
     // endregion
 
     /**
-     * This is where drawing is done. Drawing background, layers and much more
+     * This is where drawing is done. Everything from drawing background, layers and much more
      */
     @Override
     protected void onDraw(Canvas canvas) {
@@ -528,8 +543,8 @@ public class MyCanvas extends View {
 
                 switch (layer.type) {
 
-                    case LayerModel.FILTER:
-                        canvas.drawBitmap(layer.mainBitmap, null, layer.mainRect, bitmapPaint);
+                    case LayerModel.MAIN_LAYER:
+                        canvas.drawBitmap(layer.bitmap, null, layer.mainRect, bitmapPaint);
 //                        canvas.drawLine(0, screenRect.centerY(), screenRect.width(), screenRect.centerY(), deletePaint);
 //                        canvas.drawLine(screenRect.centerX(), 0, screenRect.centerX(), screenRect.height(), deletePaint);
 
@@ -557,7 +572,7 @@ public class MyCanvas extends View {
                         break;
 
                     case LayerModel.PAINT:
-                        canvas.drawBitmap(firstLayer.mainBitmap, null, firstLayer.mainRect, layer.paint);
+                        canvas.drawBitmap(firstLayer.bitmap, null, firstLayer.mainRect, layer.paint);
                         break;
 
                     case LayerModel.DOODLE:
@@ -599,19 +614,6 @@ public class MyCanvas extends View {
             invalidateAgain = false;
             invalidate();
         }
-    }
-
-    private void updateAnimationTime(StickerView sticker) {
-        long now = android.os.SystemClock.uptimeMillis();
-
-        if (sticker.movieStart == 0) {
-            sticker.movieStart = now;
-        }
-        int dur = sticker.movie.duration();
-        if (dur == 0) {
-            dur = StickerView.DEFAULT_MOVIE_DURATION;
-        }
-        sticker.currentAnimationTime = (int) ((now - sticker.movieStart) % dur);
     }
 
     /**
@@ -1026,7 +1028,6 @@ public class MyCanvas extends View {
         }
     }
 
-
     // region --> H E L P E R S   M E T H O D S   F O R    G E S T U R E S <--
 
     private int findSelectedViewIndex(float x, float y) {
@@ -1125,7 +1126,8 @@ public class MyCanvas extends View {
      */
     public void undo() {
         final LayerModel lastLayer = getLastLayer();
-        if (lastLayer != null && lastLayer.type == LayerModel.DRAWING) {
+        if (lastLayer != null &&
+                (lastLayer.type == LayerModel.DRAWING || lastLayer.type == LayerModel.DOODLE)) {
             deleteLastLayer();
             invalidate();
         }
@@ -1137,48 +1139,145 @@ public class MyCanvas extends View {
 
 
     public void rotateImage(int rotation) {
-        if (layers != null && !layers.isEmpty() && layers.get(0).type == LayerModel.FILTER) {
-            Matrix matrix = new Matrix();
-            matrix.postRotate(rotation);
-            final LayerModel layer = layers.get(0);
-            Bitmap temp = layer.mainBitmap.copy(layer.mainBitmap.getConfig(), true);
-            layer.mainBitmap = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), matrix, false);
-            invalidate();
+        if (layers != null && !layers.isEmpty() && layers.get(0) != null) {
+
+            // get First layer
+            final LayerModel firstLayer = getFirstLayer();
+            if (firstLayer != null && firstLayer.type == LayerModel.MAIN_LAYER
+                    && firstLayer.bitmapManager != null && firstLayer.bitmap != null) {
+
+                // get existing matrix from the MainBitmap Class
+                Matrix matrix = firstLayer.bitmapManager.getMatrix();
+                if (matrix == null) matrix = new Matrix();
+
+                // apply the rotation to the matrix
+                matrix.postRotate(rotation);
+
+                firstLayer.bitmapManager.getEditedBitmapFromMatrix(context, matrix, bitmap -> {
+                    // update changes in the first layer
+                    firstLayer.bitmap = bitmap;
+                    invalidate();
+                });
+            }
         }
     }
 
     public void flipHorizontal() {
-        if (layers != null && !layers.isEmpty() && layers.get(0).type == LayerModel.FILTER) {
-            Matrix matrix = new Matrix();
-            final LayerModel layer = layers.get(0);
 
-            Bitmap temp = layer.mainBitmap.copy(layer.mainBitmap.getConfig(), true);
-            matrix.postScale(-1, 1, temp.getWidth() / 2.0f, temp.getHeight() / 2.0f);
+        if (layers != null && !layers.isEmpty() && layers.get(0) != null) {
 
-            layer.mainBitmap = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), matrix, false);
-            invalidate();
+            // get First layer
+            final LayerModel firstLayer = getFirstLayer();
+            if (firstLayer != null && firstLayer.type == LayerModel.MAIN_LAYER
+                    && firstLayer.bitmapManager != null && firstLayer.bitmap != null) {
+
+                // get existing matrix from the MainBitmap Class
+                Matrix matrix = firstLayer.bitmapManager.getMatrix();
+                if (matrix == null) matrix = new Matrix();
+
+                Bitmap cachedBitmap = firstLayer.bitmapManager.getCachedBitmap();
+                if (cachedBitmap == null)
+                    cachedBitmap = firstLayer.bitmapManager.getOriginalBitmap();
+
+                // apply the flip horizontally to the matrix by scaling with negative x
+                matrix.postScale(-1, 1, cachedBitmap.getWidth() / 2.0f, cachedBitmap.getHeight() / 2.0f);
+
+                firstLayer.bitmapManager.getEditedBitmapFromMatrix(context, matrix, bitmap -> {
+                    // update changes in the first layer
+                    firstLayer.bitmap = bitmap;
+                    invalidate();
+                });
+            }
         }
+
+
+//        if (layers != null && !layers.isEmpty() && layers.get(0).type == LayerModel.MAIN_LAYER) {
+//
+//            Bitmap cachedBitmap = MainBitmap.getCachedBitmap();
+//            if (cachedBitmap == null)
+//                cachedBitmap = MainBitmap.getOriginalBitmap();
+//
+//            // get existing matrix from the MainBitmap Class
+//            Matrix matrix = MainBitmap.getMatrix();
+//            if (matrix == null) matrix = new Matrix();
+//
+//            // apply the flip horizontally to the matrix by scaling with negative x
+//            matrix.postScale(-1, 1, cachedBitmap.getWidth() / 2.0f, cachedBitmap.getHeight() / 2.0f);
+//
+//            MainBitmap.getEditedBitmapFromMatrix(context, matrix, new MainBitmap.GetMainBitmapCallback() {
+//                @Override
+//                public void getBitmap(Bitmap bitmap) {
+//                    // add the bitmap in the layer and invalidate
+//                    final LayerModel layer1 = layers.get(0);
+//                    layer1.bitmap = bitmap;
+//                    invalidate();
+//                }
+//            });
+//        }
     }
 
     public void flipVertical() {
-        if (layers != null && !layers.isEmpty() && layers.get(0).type == LayerModel.FILTER) {
-            Matrix matrix = new Matrix();
-            final LayerModel layer = layers.get(0);
+        if (layers != null && !layers.isEmpty() && layers.get(0) != null) {
 
-            Bitmap temp = layer.mainBitmap.copy(layer.mainBitmap.getConfig(), true);
-            matrix.postScale(1, -1, temp.getWidth() / 2.0f, temp.getHeight() / 2.0f);
+            // get First layer
+            final LayerModel firstLayer = getFirstLayer();
+            if (firstLayer != null && firstLayer.type == LayerModel.MAIN_LAYER
+                    && firstLayer.bitmapManager != null && firstLayer.bitmap != null) {
 
-            layer.mainBitmap = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), matrix, false);
-            invalidate();
+                // get existing matrix from the MainBitmap Class
+                Matrix matrix = firstLayer.bitmapManager.getMatrix();
+                if (matrix == null) matrix = new Matrix();
+
+                Bitmap cachedBitmap = firstLayer.bitmapManager.getCachedBitmap();
+                if (cachedBitmap == null)
+                    cachedBitmap = firstLayer.bitmapManager.getOriginalBitmap();
+
+                // apply the flip vertically to the matrix by scaling with negative x
+                matrix.postScale(1, -1, cachedBitmap.getWidth() / 2.0f, cachedBitmap.getHeight() / 2.0f);
+
+                firstLayer.bitmapManager.getEditedBitmapFromMatrix(context, matrix, bitmap -> {
+                    // update changes in the first layer
+                    firstLayer.bitmap = bitmap;
+                    invalidate();
+                });
+            }
         }
     }
 
-    public void blur(Bitmap blurredBitmap, int value) {
-        if (layers != null && !layers.isEmpty() && layers.get(0).type == LayerModel.FILTER) {
-            final LayerModel layer = layers.get(0);
-            layer.blurAmount = value;
-            layer.mainBitmap = blurredBitmap;
-            invalidate();
+    public void blur(int value) {
+
+        if (layers != null && !layers.isEmpty() && layers.get(0) != null) {
+
+            // get First layer
+            final LayerModel firstLayer = getFirstLayer();
+            if (firstLayer != null && firstLayer.type == LayerModel.MAIN_LAYER
+                    && firstLayer.bitmapManager != null && firstLayer.bitmap != null) {
+
+                // Apply the Blur
+                firstLayer.bitmapManager.getEditedBitmapFromBlur(context, value, bitmap -> {
+                    // update changes in the first layer
+                    firstLayer.bitmap = bitmap;
+                    invalidate();
+                });
+            }
+        }
+    }
+
+    public void sharp(int value) {
+        if (layers != null && !layers.isEmpty() && layers.get(0) != null) {
+
+            // get First layer
+            final LayerModel firstLayer = getFirstLayer();
+            if (firstLayer != null && firstLayer.type == LayerModel.MAIN_LAYER
+                    && firstLayer.bitmapManager != null && firstLayer.bitmap != null) {
+
+                // Apply the Blur
+                firstLayer.bitmapManager.getEditedBitmapFromSharp(context, value, bitmap -> {
+                    // update changes in the first layer
+                    firstLayer.bitmap = bitmap;
+                    invalidate();
+                });
+            }
         }
     }
 
@@ -1304,18 +1403,15 @@ public class MyCanvas extends View {
         /*
           Stroke Size of the Drawing
          */
-        drawingSize = Math.max(minSize, size);
+        drawingSize = Math.max(minBrushSize, size);
         if (drawingType == DrawingType.BRUSH)
             drawingSize = drawingSize * BRUSH_SIZE_MULTIPLIER;// increase stroke size for brush
-        if (drawingPaint == null) {
-            init();
-        } else {
-            if (drawingType == DrawingType.DOODLE)// change the paint size
-                drawingPaint.setStrokeWidth(drawingSize);
-            else if (drawingType == DrawingType.BRUSH) { // change the bitmaps size
-                brushStrokeBitmap = CanvasUtils.getBitmapFromVector(context, strokeDrawableId, (int) drawingSize, (int) drawingSize);
-            }
+        if (drawingType == DrawingType.DOODLE)// change the paint size
+            drawingPaint.setStrokeWidth(drawingSize);
+        else if (drawingType == DrawingType.BRUSH) { // change the bitmaps size
+            brushStrokeBitmap = CanvasUtils.getBitmapFromVector(context, strokeDrawableId, (int) drawingSize, (int) drawingSize);
         }
+
         invalidate();
     }
 
@@ -1323,15 +1419,11 @@ public class MyCanvas extends View {
         /*
           Stroke Color of the Drawing
          */
-        if (drawingPaint == null) {
-            init();
-        } else {
-            if (drawingType == DrawingType.DOODLE) {
-                drawingPaint.setColor(color); // change the paint color
-                drawingPaint.setColorFilter(null);
-            } else if (drawingType == DrawingType.BRUSH) { // change the bitmap color by applying Tint
-                drawingPaint.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN));
-            }
+        if (drawingType == DrawingType.DOODLE) {
+            drawingPaint.setColor(color); // change the paint color
+            drawingPaint.setColorFilter(null);
+        } else if (drawingType == DrawingType.BRUSH) { // change the bitmap color by applying Tint
+            drawingPaint.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN));
         }
         invalidate();
     }
@@ -1341,6 +1433,16 @@ public class MyCanvas extends View {
         brushStrokeBitmap = CanvasUtils.getBitmapFromVector(context, strokeDrawableId, (int) drawingSize, (int) drawingSize); //, drawingSize, drawingSize
     }
 
+    public void applyFilter(FilterModel filter) {
+        final LayerModel firstLayer = getFirstLayer();
+        if (firstLayer != null && firstLayer.type == LayerModel.MAIN_LAYER
+                && firstLayer.bitmapManager != null && firstLayer.bitmap != null) {
+            firstLayer.bitmapManager.getEditedBitmapFromFilter(context, filter, bitmap -> {
+                firstLayer.bitmap = bitmap;
+                invalidate();
+            });
+        }
+    }
 
     //endregion
 

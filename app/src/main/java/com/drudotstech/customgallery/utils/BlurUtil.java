@@ -14,9 +14,16 @@ import androidx.renderscript.RenderScript;
 import androidx.renderscript.ScriptIntrinsicBlur;
 
 public class BlurUtil {
-    private static final float BLUR_RADIUS = 25f;
 
-    public Bitmap blur(Context context, Bitmap bitmap, int iterations) {
+    public Bitmap blur(Context context, Bitmap bitmap, float value) {
+        float blurRadius = 25f;
+
+        int iterations = (int) value;
+        if (iterations == 1) {
+            float offset = value - iterations; // to get the decimal values
+            blurRadius = offset * 25;
+        }
+
         int width = Math.round(bitmap.getWidth());
         int height = Math.round(bitmap.getHeight());
         Bitmap inputBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
@@ -28,7 +35,7 @@ public class BlurUtil {
             Allocation tmpIn = Allocation.createFromBitmap(rs, inputBitmap);
             Allocation tmpOut = Allocation.createFromBitmap(rs, outputBitmap);
 //        Radius out of range (0 < r <= 25)
-            intrinsicBlur.setRadius(BLUR_RADIUS);
+            intrinsicBlur.setRadius(blurRadius);
             intrinsicBlur.setInput(tmpIn);
             intrinsicBlur.forEach(tmpOut);
             tmpOut.copyTo(inputBitmap);

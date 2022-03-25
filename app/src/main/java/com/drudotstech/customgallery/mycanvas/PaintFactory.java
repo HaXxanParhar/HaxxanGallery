@@ -1,9 +1,16 @@
 package com.drudotstech.customgallery.mycanvas;
 
+import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.ColorFilter;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
+
+import androidx.renderscript.Allocation;
+import androidx.renderscript.Element;
+import androidx.renderscript.RenderScript;
+import androidx.renderscript.ScriptIntrinsicConvolve3x3;
 
 import com.drudotstech.customgallery.mycanvas.models.LayerModel;
 
@@ -14,7 +21,7 @@ import com.drudotstech.customgallery.mycanvas.models.LayerModel;
 
 public class PaintFactory {
 
-    private static double DELTA_INDEX[] = {
+    private static final double[] DELTA_INDEX = {
             0, 0.01, 0.02, 0.04, 0.05, 0.06, 0.07, 0.08, 0.1, 0.11,
             0.12, 0.14, 0.15, 0.16, 0.17, 0.18, 0.20, 0.21, 0.22, 0.24,
             0.25, 0.27, 0.28, 0.30, 0.32, 0.34, 0.36, 0.38, 0.40, 0.42,
@@ -22,11 +29,9 @@ public class PaintFactory {
             0.71, 0.74, 0.77, 0.80, 0.83, 0.86, 0.89, 0.92, 0.95, 0.98,
             1.0, 1.06, 1.12, 1.18, 1.24, 1.30, 1.36, 1.42, 1.48, 1.54,
             1.60, 1.66, 1.72, 1.78, 1.84, 1.90, 1.96, 2.0, 2.12, 2.25,
-            2.37, 2.50, 2.62, 2.75, 2.87, 3.0, 3.2, 3.4, 3.6, 3.8,
-            4.0, 4.3, 4.7, 4.9, 5.0, 5.5, 6.0, 6.5, 6.8, 7.0,
-            7.3, 7.5, 7.8, 8.0, 8.4, 8.7, 9.0, 9.4, 9.6, 9.8,
-            10.0
-    };
+            2.37, 2.50, 2.62, 2.75, 2.87, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0,
+            4.3, 4.7, 4.9, 5.0, 5.5, 6.0, 6.5, 6.8, 7.0, 7.3, 7.5, 7.8,
+            8.0, 8.4, 8.7, 9.0, 9.4, 9.6, 9.8, 10.0};
 
 
     public static void adjustHue(ColorMatrix cm, float value) {
@@ -178,6 +183,70 @@ public class PaintFactory {
         Paint paint = new Paint();
         paint.setColorFilter(new ColorMatrixColorFilter(cm));
         return paint;
+    }
+
+    // low
+    public static void loadBitmapSharp(Context context, Bitmap bitmap) {
+        float[] sharp = {-0.60f, -0.60f, -0.60f, -0.60f, 5.81f, -0.60f,
+                -0.60f, -0.60f, -0.60f};
+        //you call the method above and just paste the bitmap you want to apply it and the float of above
+        bitmap = doSharpen(context, bitmap, sharp);
+    }
+
+    // High
+    public static Bitmap loadBitmapSharpHigh(Context context, Bitmap bitmap) {
+        float[] sharp = {-0.15f, -0.15f, -0.15f,
+                -0.15f, 2.2f, -0.15f,
+                -0.15f, -0.15f, -0.15f};
+        //you call the method above and just paste the bitmap you want to apply it and the float of above
+        return doSharpen(context, bitmap, sharp);
+    }
+
+    public static Bitmap doSharpen(Context context, Bitmap original, float[] radius) {
+        Bitmap bitmap = Bitmap.createBitmap(
+                original.getWidth(), original.getHeight(),
+                Bitmap.Config.ARGB_8888);
+
+        RenderScript rs = RenderScript.create(context);
+
+        Allocation allocIn = Allocation.createFromBitmap(rs, original);
+        Allocation allocOut = Allocation.createFromBitmap(rs, bitmap);
+
+        ScriptIntrinsicConvolve3x3 convolution
+                = ScriptIntrinsicConvolve3x3.create(rs, Element.U8_4(rs));
+        convolution.setInput(allocIn);
+        convolution.setCoefficients(radius);
+        convolution.forEach(allocOut);
+
+        allocOut.copyTo(bitmap);
+        rs.destroy();
+
+        return bitmap;
+    }
+
+    public static Bitmap doSharpen(Context context, Bitmap original, float multiplier) {
+        if (multiplier <= 0)
+            return original;
+        float[] sharp = {0, -multiplier, 0, -multiplier, 5f * multiplier, -multiplier, 0, -multiplier, 0};
+        Bitmap bitmap = Bitmap.createBitmap(
+                original.getWidth(), original.getHeight(),
+                Bitmap.Config.ARGB_8888);
+
+        RenderScript rs = RenderScript.create(context);
+
+        Allocation allocIn = Allocation.createFromBitmap(rs, original);
+        Allocation allocOut = Allocation.createFromBitmap(rs, bitmap);
+
+        ScriptIntrinsicConvolve3x3 convolution
+                = ScriptIntrinsicConvolve3x3.create(rs, Element.U8_4(rs));
+        convolution.setInput(allocIn);
+        convolution.setCoefficients(sharp);
+        convolution.forEach(allocOut);
+
+        allocOut.copyTo(bitmap);
+        rs.destroy();
+
+        return bitmap;
     }
 
 }

@@ -8,7 +8,7 @@
         android:id="@+id/iv_gif"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/default_gif"
+        android:src="@drawable/loading10"
         android:visibility="visible" />
 
 </RelativeLayout>

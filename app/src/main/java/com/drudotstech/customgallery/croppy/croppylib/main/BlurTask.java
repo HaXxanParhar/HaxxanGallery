@@ -11,31 +11,29 @@ import com.drudotstech.customgallery.utils.BlurUtil;
  ******************************************************/
 
 
-public class BlurTask extends AsyncTask<Void, Void, BitmapResult> {
+public class BlurTask extends AsyncTask<Context, Void, BitmapResult> {
 
-    private final Context context;
     private final int iterations;
     private final BlurBitmapCallback callback;
     private Bitmap bitmap;
 
-    public BlurTask(Context context, Bitmap bitmap, BlurBitmapCallback callback) {
-        this.context = context;
+    public BlurTask(Bitmap bitmap, BlurBitmapCallback callback) {
         this.bitmap = bitmap;
         this.iterations = 1;
         this.callback = callback;
     }
 
-    public BlurTask(Context context, Bitmap bitmap, int iterations, BlurBitmapCallback callback) {
-        this.context = context;
+    public BlurTask(Bitmap bitmap, int iterations, BlurBitmapCallback callback) {
         this.bitmap = bitmap;
         this.iterations = iterations;
         this.callback = callback;
     }
 
     @Override
-    protected BitmapResult doInBackground(Void... voids) {
+    protected BitmapResult doInBackground(Context... params) {
+        Context context = params[0];
         try {
-            bitmap = new BlurUtil().blur(context, bitmap, iterations);
+                bitmap = new BlurUtil().blur(context, bitmap, iterations);
             return new BitmapResult(true, bitmap);
         } catch (Exception e) {
             return new BitmapResult(false, e);
