@@ -56,33 +56,36 @@ public class BitmapManager {
 
     public void getEditedBitmapFromFilter(Context context, FilterModel filter, GetMainBitmapCallback callback) {
         this.filter = filter;
-        getEditedBitmap(context, EffectType.FILTER, callback);
+        currentEffect = EffectType.FILTER;
+        getEditedBitmap(context, callback);
     }
 
     public void getEditedBitmapFromMatrix(Context context, Matrix matrix, GetMainBitmapCallback callback) {
         this.matrix = matrix;
-        getEditedBitmap(context, EffectType.MATRIX, callback);
+        currentEffect = EffectType.MATRIX;
+        getEditedBitmap(context, callback);
     }
 
     public void getEditedBitmapFromBlur(Context context, int value, GetMainBitmapCallback callback) {
         this.blurValue = value;
-        getEditedBitmap(context, EffectType.BLUR, callback);
+        currentEffect = EffectType.BLUR;
+        getEditedBitmap(context, callback);
     }
 
     public void getEditedBitmapFromSharp(Context context, int value, GetMainBitmapCallback callback) {
         this.sharpValue = value;
-        getEditedBitmap(context, EffectType.SHARPEN, callback);
+        currentEffect = EffectType.SHARPEN;
+        getEditedBitmap(context, callback);
     }
 
-    private void getEditedBitmap(Context context, EffectType effectType, GetMainBitmapCallback callback) {
+    private void getEditedBitmap(Context context, GetMainBitmapCallback callback) {
 
         // New effect: Hence create new cached bitmap
-        currentEffect = effectType;
         if (lastEffect == EffectType.NONE || currentEffect != lastEffect) {
             if (cachedBitmap != null)
                 cachedBitmap.recycle();
             cachedBitmap = null;
-            createCachedBitmap(context, effectType, callback);
+            createCachedBitmap(context, currentEffect, callback);
         }
 
         // last effect is to be applied again
@@ -152,19 +155,19 @@ public class BitmapManager {
             }
         }).thenApply(new Function<Bitmap, Bitmap>() {
             @Override
-            public Bitmap apply(Bitmap tempBitmap) {
+            public Bitmap apply(Bitmap bitmap) {
                 if (currentEffect == EffectType.BLUR && blurValue != -1) {
-                    tempBitmap = new BlurUtil().blur(context, tempBitmap, blurValue / BLUR_MULTIPLIER);
+                    bitmap = new BlurUtil().blur(context, bitmap, blurValue / BLUR_MULTIPLIER);
                 }
-                return tempBitmap;
+                return bitmap;
             }
         }).thenApply(new Function<Bitmap, Bitmap>() {
             @Override
-            public Bitmap apply(Bitmap tempBitmap) {
+            public Bitmap apply(Bitmap bitmap) {
                 if (currentEffect == EffectType.FILTER && filter != null) {
-                    tempBitmap = new FilterTask(tempBitmap, filter, null).applyFilter(context);
+                    bitmap = new FilterTask(bitmap, filter, null).applyFilter(context);
                 }
-                return tempBitmap;
+                return bitmap;
             }
         }).thenApply(new Function<Bitmap, Bitmap>() {
             @Override

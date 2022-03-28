@@ -568,7 +568,10 @@ public class MyCanvas extends View {
                         canvas.restore();
 
                         // invalidate again if stickerView is a GIF
-                        invalidateAgain = layer.sticker.stickerType == StickerView.GIF;
+                        if (layer.sticker.stickerType == StickerView.GIF) {
+                            invalidateAgain = true;
+                        }
+
                         break;
 
                     case LayerModel.PAINT:

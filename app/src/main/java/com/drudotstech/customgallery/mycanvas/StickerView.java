@@ -325,6 +325,7 @@ public class StickerView extends View {
             secondaryTextPaint.setColor(Color.WHITE);
             secondaryTextPaint.setTypeface(ResourcesCompat.getFont(context, R.font.metropolis_bold));
             secondaryTextPaint.setTextSize(50);
+            secondaryTextPaint.setAntiAlias(true);
 
             buildStaticLayout();
         }
